@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>التقرير الكلي - نظام إحصائيات التدريب</title>
+<link rel="icon" type="image/x-icon" href="app_icon.ico">
+<script src="tailwind.min.js"></script>
+<script src="xlsx.full.min.js"></script>
+<style>
+* { font-family: 'Arial', 'Tahoma', sans-serif !important; }
+body { font-family: 'Arial', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+.form-input { transition: all 0.3s ease; border: 3px solid #d1d5db; border-radius: 0.5rem; padding: 0.75rem 1rem; background-color: #ffffff; font-size: 0.95rem; width: 100%; }
+.form-input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+.form-label { display: block; font-size: 0.875rem; font-weight: 700; color: #1f2937; margin-bottom: 0.5rem; }
+.form-label .required { color: #dc2626; }
+.btn-primary { padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; transition: all 0.3s ease; border: none; cursor: pointer; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 0.5rem; }
+.btn-primary:hover { transform: translateY(-2px); }
+.btn-excel { padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; transition: all 0.3s ease; border: none; cursor: pointer; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
+.btn-word { padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; transition: all 0.3s ease; border: none; cursor: pointer; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; }
+.btn-print { padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; transition: all 0.3s ease; border: none; cursor: pointer; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #4b5563 0%, #1f2937 100%); color: white; }
+.btn-email { padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; transition: all 0.3s ease; border: none; cursor: pointer; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; }
+.section-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 3px solid #ec4899; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { background-color: #ffffff; color: #000000; padding: 0.75rem 0.5rem; border: 1px solid #000000; font-weight: 700; font-size: 0.825rem; text-align: center; }
+.data-table td { padding: 0.65rem 0.5rem; border: 1px solid #cbd5e1; font-size: 0.85rem; text-align: center; }
+.data-table tbody tr:hover { background-color: #f8fafc; }
+.data-table tbody tr:nth-child(even) { background-color: #f9fafb; }
+.header-image-container { width: 100%; max-width: 1200px; margin: 0 auto 1.5rem auto; border-radius: 0.75rem; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25); border: 2px solid #1e293b; background: #ffffff; }
+.header-image-container img { width: 100%; height: auto; display: block; }
+.user-info-bar { background: white; border-radius: 0.75rem; padding: 0.75rem 1.25rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.nav-controls-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    line-height: 1.2;
+}
+
+.nav-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.nav-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(80%);
+}
+
+.nav-btn-home { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; }
+.nav-btn-prev { background: linear-gradient(135deg, #64748b, #475569); color: white; }
+.nav-btn-next { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; }
+.nav-btn-logout { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+
+.role-badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-top: 0.15rem;
+}
+
+.role-admin { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+.role-group1 { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.role-group2 { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+.total-cell { background-color: #ffe4e6 !important; color: #9f1239 !important; font-weight: 700 !important; }
+.summary-row { background-color: #e0f2fe !important; color: #0369a1 !important; font-weight: 700 !important; }
+select.form-input { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 0.75rem center; background-size: 1.25rem; padding-left: 2.5rem; }
+.official-header {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    padding: 15px 30px;
+    border-radius: 12px;
+    border-bottom: 4px solid #1e3c72;
+    position: relative;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.official-header .header-section { flex: 1; display: flex; align-items: center; }
+.official-header .header-section-right { justify-content: flex-end; padding-left: 90px; }
+.official-header .header-section-left { justify-content: flex-start; padding-right: 90px; }
+.official-header .header-text-block { display: flex; flex-direction: column; line-height: 1.25; }
+.official-header .header-text-right { text-align: right; }
+.official-header .header-text-left { text-align: left; }
+.official-header .ministry-name { font-size: 17px; font-weight: bold; color: #1e3c72; white-space: nowrap; }
+.official-header .department-name { font-size: 14px; color: #2a5298; font-weight: bold; white-space: nowrap; }
+.official-header .header-logo-center {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 85px; height: 85px; object-fit: contain; z-index: 5;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+.official-header .header-logo-center:hover {
+    transform: translate(-50%, -50%) scale(1.08);
+    filter: drop-shadow(0 6px 14px rgba(30,60,114,0.3));
+}
+
+@media (max-width: 768px) {
+    .official-header { flex-direction: column; gap: 15px; min-height: auto; }
+    .official-header .header-section-right, .official-header .header-section-left { justify-content: center; text-align: center; padding: 0; }
+    .official-header .header-logo-center { position: static; transform: none; order: -1; }
+}
+
+@page { size: A4 landscape; margin: 6mm; }
+@media print {
+.no-print { display: none !important; }
+html, body { background: white !important; margin: 0 !important; padding: 0 !important; width: 100% !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+main { max-width: 100% !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+section { box-shadow: none !important; padding: 0 !important; margin: 0 !important; overflow: visible !important; }
+div[style*="overflow-x"] { overflow: visible !important; }
+.data-table { width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; }
+.data-table th, .data-table td { padding: 3px 2px !important; font-size: 7.5pt !important; word-break: break-word !important; border: 1px solid black !important; }
+.data-table th { background-color: #ffffff !important; color: #000000 !important; border: 1px solid #000000 !important; }
+.total-cell { background-color: #ffe4e6 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+.summary-row { background-color: #e0f2fe !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}
+</style>
+<script src="firebase_sync.js"></script>
+</head>
+<body class="p-4">
+<div id="userInfoBar" class="user-info-bar no-print">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="width: 38px; height: 38px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.25rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+            👤
+        </div>
+        <div style="text-align: right;">
+            <div style="font-weight: 800; color: #1e293b; font-size: 1.1rem; line-height: 1.1;" id="currentUserName">admin</div>
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: bold; line-height: 1.1; margin-top: 3px;" id="currentUserRoleBadge">أدمن</div>
+        </div>
+    </div>
+    <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+        <button type="button" onclick="window.location.href='file_to_excel.html'" class="btn-primary" style="background: #0284c7; color: white; padding: 0.45rem 1.1rem; font-size: 0.85rem; border-radius: 0.5rem; font-weight: bold; border: none; cursor: pointer;" title="فتح برنامج محول الملفات الشامل إلى Excel">🔄 تحويل الملفات لـ Excel</button>
+        <button type="button" onclick="showActivitiesFolderInfo()" class="btn-primary" style="background: #0d9488; color: white; padding: 0.45rem 1.1rem; font-size: 0.85rem; border-radius: 0.5rem; font-weight: bold; border: none; cursor: pointer;" title="فتح ومعرفة مكان ملف النشاطات المحفوظة داخل الحاسبة">📁 ملف النشاطات في الحاسبة</button>
+        <button type="button" onclick="window.location.href='index.html'" class="btn-primary" style="background: #4f46e5; color: white; padding: 0.45rem 1.25rem; font-size: 0.9rem; border-radius: 0.5rem; font-weight: bold; border: none; cursor: pointer;">🏠 الرئيسية</button>
+        <button type="button" onclick="performLogout()" class="btn-primary" style="background: #dc2626; color: white; padding: 0.45rem 1.25rem; font-size: 0.9rem; border-radius: 0.5rem; font-weight: bold; border: none; cursor: pointer;">خروج</button>
+    </div>
+</div>
+
+<!-- الترويسة الأصلية -->
+<div class="header-image-container no-print">
+    <img src="header.png" alt="وزارة التربية - قسم الإعداد والتدريب" onerror="this.style.display='none'">
+</div>
+
+<main class="max-w-7xl mx-auto space-y-6">
+<section class="bg-white rounded-2xl shadow-xl p-6 no-print" id="totalReportFormSection">
+<h3 class="section-title">📊 إدخال بيانات تقرير الأنشطة الكلي</h3>
+
+<!-- شريط تنبيه وضع التعديل -->
+<div id="editingBanner" style="display:none; background:#eff6ff; border:2px solid #3b82f6; border-radius:0.75rem; padding:0.85rem 1.25rem; margin-bottom:1.25rem; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; box-shadow:0 4px 12px rgba(59,130,246,0.15);">
+    <div style="display:flex; align-items:center; gap:0.6rem; color:#1e40af; font-weight:700; font-size:1rem;">
+        <span style="font-size:1.35rem;">✏️</span>
+        <span>أنت الآن في وضع تعديل: <span id="editingRecordTitle" style="color:#1d4ed8; font-weight:800; text-decoration:underline;"></span></span>
+    </div>
+    <div style="display:flex; gap:0.5rem; align-items:center;">
+        <button type="button" onclick="cancelEdit()" style="background:#ef4444; color:white; border:none; border-radius:0.5rem; padding:0.45rem 1rem; font-size:0.85rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.3rem;">✕ إلغاء التعديل</button>
+    </div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 pb-6 border-b border-gray-200">
+<div>
+<label class="form-label">المديرية *</label>
+<input type="text" id="directorateName" class="form-input" value="مديرية تربية المثنى/شعبة التدريب">
+</div>
+<div>
+<label class="form-label">السنة *</label>
+<input type="number" id="reportYear" class="form-input" value="2026" min="2020" max="2050">
+</div>
+<div>
+<label class="form-label">الشهر *</label>
+<select id="reportMonth" class="form-input">
+<option value="كانون الثاني / (1)">كانون الثاني / (1)</option>
+<option value="شباط / (2)">شباط / (2)</option>
+<option value="آذار / (3)">آذار / (3)</option>
+<option value="نيسان / (4)">نيسان / (4)</option>
+<option value="ايار / (5)">ايار / (5)</option>
+<option value="حزيران / (6)">حزيران / (6)</option>
+<option value="تموز / (7)" selected>تموز / (7)</option>
+<option value="آب / (8)">آب / (8)</option>
+<option value="أيلول / (9)">أيلول / (9)</option>
+<option value="تشرين الأول / (10)">تشرين الأول / (10)</option>
+<option value="تشرين الثاني / (11)">تشرين الثاني / (11)</option>
+<option value="كانون الأول / (12)">كانون الأول / (12)</option>
+</select>
+</div>
+</div>
+
+<h4 style="font-size: 1.125rem; font-weight: 700; color: #374151; margin-bottom: 1rem;">أنشطة اللجان العلمية:</h4>
+<form id="totalReportForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<div style="padding: 1rem; background: #faf5ff; border-radius: 0.75rem; border: 1px solid #e9d5ff;">
+<span style="font-weight: 700; color: #581c87; display: block; margin-bottom: 0.5rem;">1. الحلقات والورش التدريبية</span>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">الأنشطة</label><input type="number" id="cat_workshops_act" class="form-input" min="0" value="0"></div>
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">المتدربين</label><input type="number" id="cat_workshops_trn" class="form-input" min="0" value="0"></div>
+</div>
+</div>
+<div style="padding: 1rem; background: #eff6ff; border-radius: 0.75rem; border: 1px solid #dbeafe;">
+<span style="font-weight: 700; color: #1e3a8a; display: block; margin-bottom: 0.5rem;">2. الدروس التدريبية</span>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">الأنشطة</label><input type="number" id="cat_lessons_act" class="form-input" min="0" value="0"></div>
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">المتدربين</label><input type="number" id="cat_lessons_trn" class="form-input" min="0" value="0"></div>
+</div>
+</div>
+<div style="padding: 1rem; background: #ecfdf5; border-radius: 0.75rem; border: 1px solid #d1fae5;">
+<span style="font-weight: 700; color: #064e3b; display: block; margin-bottom: 0.5rem;">3. ندوات ومحاضرات واجتماعات</span>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">الأنشطة</label><input type="number" id="cat_symposiums_act" class="form-input" min="0" value="0"></div>
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">المتدربين</label><input type="number" id="cat_symposiums_trn" class="form-input" min="0" value="0"></div>
+</div>
+</div>
+<div style="padding: 1rem; background: #fffbeb; border-radius: 0.75rem; border: 1px solid #fef3c7;">
+<span style="font-weight: 700; color: #78350f; display: block; margin-bottom: 0.5rem;">4. معارض ومهرجان</span>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">الأنشطة</label><input type="number" id="cat_exhibitions_act" class="form-input" min="0" value="0"></div>
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">المتدربين</label><input type="number" id="cat_exhibitions_trn" class="form-input" min="0" value="0"></div>
+</div>
+</div>
+<div style="padding: 1rem; background: #fdf2f8; border-radius: 0.75rem; border: 1px solid #fce7f3;">
+<span style="font-weight: 700; color: #831843; display: block; margin-bottom: 0.5rem;">5. عرض الأفلام العلمية</span>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">الأنشطة</label><input type="number" id="cat_films_act" class="form-input" min="0" value="0"></div>
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">المتدربين</label><input type="number" id="cat_films_trn" class="form-input" min="0" value="0"></div>
+</div>
+</div>
+<div style="padding: 1rem; background: #eef2ff; border-radius: 0.75rem; border: 1px solid #e0e7ff;">
+<span style="font-weight: 700; color: #312e81; display: block; margin-bottom: 0.5rem;">6. الزيارات والسفرات</span>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">الأنشطة</label><input type="number" id="cat_visits_act" class="form-input" min="0" value="0"></div>
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">المتدربين</label><input type="number" id="cat_visits_trn" class="form-input" min="0" value="0"></div>
+</div>
+</div>
+<div style="padding: 1rem; background: #ecfeff; border-radius: 0.75rem; border: 1px solid #cffafe;">
+<span style="font-weight: 700; color: #164e63; display: block; margin-bottom: 0.5rem;">7. المباريات التربوية</span>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">الأنشطة</label><input type="number" id="cat_matches_act" class="form-input" min="0" value="0"></div>
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">المتدربين</label><input type="number" id="cat_matches_trn" class="form-input" min="0" value="0"></div>
+</div>
+</div>
+<div style="padding: 1rem; background: #f0fdfa; border-radius: 0.75rem; border: 1px solid #ccfbf1;">
+<span style="font-weight: 700; color: #134e4a; display: block; margin-bottom: 0.5rem;">8. القوافل التدريبية</span>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">الأنشطة</label><input type="number" id="cat_convoys_act" class="form-input" min="0" value="0"></div>
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">المتدربين</label><input type="number" id="cat_convoys_trn" class="form-input" min="0" value="0"></div>
+</div>
+</div>
+<div style="padding: 1rem; background: #fff7ed; border-radius: 0.75rem; border: 1px solid #fed7aa;">
+<span style="font-weight: 700; color: #7c2d12; display: block; margin-bottom: 0.5rem;">9. المواسم الثقافية</span>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">الأنشطة</label><input type="number" id="cat_seasons_act" class="form-input" min="0" value="0"></div>
+<div><label style="font-size: 0.75rem; color: #6b7280; font-weight: 700;">المتدربين</label><input type="number" id="cat_seasons_trn" class="form-input" min="0" value="0"></div>
+</div>
+</div>
+</form>
+
+<div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-end;">
+<button type="button" id="cancelEditBtn" onclick="cancelEdit()" class="btn-primary" style="display:none; background:#64748b; color:white;">❌ إلغاء التعديل</button>
+<button type="button" id="saveEditBtn" onclick="saveEditedRecord()" class="btn-primary" style="display:none; background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color:white;">💾 حفظ التعديل</button>
+<button type="button" id="clearBtn" onclick="clearFields()" class="btn-primary bg-gray-500 text-white">🧹 تفريغ</button>
+<button type="button" id="addBtn" onclick="addToReport()" class="btn-primary bg-pink-600 text-white">➕ إضافة</button>
+</div>
+</section>
+
+<div class="bg-white rounded-2xl shadow-lg p-4 no-print flex flex-wrap gap-3 justify-center">
+<button onclick="exportExcel()" class="btn-excel">📊 تصدير Excel</button>
+<button onclick="exportWord()" class="btn-word">📄 تصدير Word</button>
+<button onclick="sendReportByEmail(event)" class="btn-email">✉️ إرسال بالإيميل</button>
+<button onclick="window.print()" class="btn-print">🖨️ طباعة</button>
+</div>
+
+<section class="bg-white rounded-2xl shadow-xl p-6 overflow-hidden">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;" class="no-print">
+<h3 style="font-size: 1.25rem; font-weight: 700; color: #1e3a8a;">👁️ معاينة الجدول</h3>
+<span style="font-size: 0.875rem; color: #6b7280;">(إجمالي السجلات: <span id="directorateCount">0</span>)</span>
+</div>
+
+<div style="overflow-x: auto;">
+<table class="data-table" id="reportTable">
+<thead>
+<tr>
+<th colspan="23" style="background-color: #ffffff; padding: 10px; border: none; border-bottom: 2px solid #000000;">
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <div style="text-align: right; color: #000000; font-weight: bold; font-size: 0.9rem; line-height: 1.3;">
+            جمهورية العراق - وزارة التربية<br>
+            المديرية العامة لتربية المثنى
+        </div>
+        <img src="logo.png" alt="شعار النظام" style="width: 55px; height: 55px; object-fit: contain;">
+        <div style="text-align: left; color: #000000; font-weight: bold; font-size: 0.9rem; line-height: 1.3;">
+            قسم الإعداد والتدريب<br>
+            شعبة التدريب والتطوير
+        </div>
+    </div>
+</th>
+</tr>
+<tr>
+<th colspan="23" id="mainTableHeader" style="font-size: 1.3rem; padding: 0.75rem 0.5rem; background-color: #ffffff; color: #000000; border: 1px solid #000000; border-bottom: 2px solid #000000;">
+أنشطة اللجان العلمية المنفذة للموظفين وعدد المتدربين لعام <span id="headerYear">2026</span> لشهر <span id="headerMonth">تموز / (7)</span>
+</th>
+</tr>
+<tr style="background-color: #ffffff; color: #000000;">
+<th rowspan="2" style="width: 40px; background-color: #ffffff; color: #000000; border: 1px solid #000000;">ت</th>
+<th rowspan="2" style="min-width: 180px; background-color: #ffffff; color: #000000; border: 1px solid #000000;">المديرية</th>
+<th colspan="2" style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">الحلقات والورش</th>
+<th colspan="2" style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">الدروس التدريبية</th>
+<th colspan="2" style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">ندوات ومحاضرات</th>
+<th colspan="2" style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">معارض ومهرجان</th>
+<th colspan="2" style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">الأفلام العلمية</th>
+<th colspan="2" style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">الزيارات والسفرات</th>
+<th colspan="2" style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">المباريات التربوية</th>
+<th colspan="2" style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">القوافل التدريبية</th>
+<th colspan="2" style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">المواسم الثقافية</th>
+<th colspan="2" style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">المجموع الكلي</th>
+<th rowspan="2" class="no-print" style="min-width: 85px; width: 85px; background-color: #ffffff; color: #000000; border: 1px solid #000000;">إجراء</th>
+</tr>
+<tr style="background-color: #ffffff; color: #000000;">
+<th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">الأنشطة</th><th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">المتدربين</th>
+<th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">الأنشطة</th><th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">المتدربين</th>
+<th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">الأنشطة</th><th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">المتدربين</th>
+<th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">الأنشطة</th><th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">المتدربين</th>
+<th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">الأنشطة</th><th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">المتدربين</th>
+<th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">الأنشطة</th><th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">المتدربين</th>
+<th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">الأنشطة</th><th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">المتدربين</th>
+<th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">الأنشطة</th><th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">المتدربين</th>
+<th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">الأنشطة</th><th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">المتدربين</th>
+<th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">الأنشطة</th><th style="background-color: #ffffff; color: #000000; border: 1px solid #000000;">المتدربين</th>
+</tr>
+</thead>
+<tbody id="reportTableBody">
+</tbody>
+<tfoot id="reportTableFooter">
+</tfoot>
+</table>
+</div>
+</section>
+</main>
+
+<!-- ==================== نافذة سؤال معرفة مكان حفظ الملف في الحاسبة ==================== -->
+<div id="fileLocationQuestionModal" class="no-print" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.75); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center; padding:1rem; direction:rtl;">
+    <div style="background:#ffffff; border-radius:1.25rem; max-width:580px; width:100%; padding:1.75rem; box-shadow:0 25px 50px -12px rgba(0,0,0,0.45); border:2px solid #10b981; text-align:right; font-family:'Cairo',sans-serif;">
+        <div style="display:flex; align-items:center; gap:0.85rem; margin-bottom:1rem;">
+            <div style="width:52px; height:52px; border-radius:50%; background:#d1fae5; display:flex; align-items:center; justify-content:center; font-size:1.8rem; flex-shrink:0;">📁</div>
+            <div>
+                <h3 style="margin:0; font-size:1.25rem; font-weight:800; color:#065f46;">تم حفظ الملف داخل الحاسبة بنجاح!</h3>
+                <p id="questionSavedFileName" style="margin:4px 0 0 0; font-size:0.95rem; font-weight:700; color:#047857;"></p>
+            </div>
+        </div>
+
+        <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:0.85rem; padding:1rem; margin-bottom:1rem;">
+            <div style="font-size:0.85rem; font-weight:800; color:#1e3a8a; margin-bottom:0.4rem;">📍 مكان حفظ الملف في الحاسبة (المسار الكامل):</div>
+            <div id="questionSavedFilePath" style="font-family:monospace, 'Cairo'; font-size:0.85rem; color:#0f172a; background:#e2e8f0; padding:0.6rem 0.75rem; border-radius:0.5rem; word-break:break-all; direction:ltr; text-align:left; font-weight:700;"></div>
+            <div style="margin-top:0.5rem; font-size:0.8rem; color:#475569; font-weight:600; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                <span>💡 تم حفظ نسخة أيضاً في ملف نشاطات البرنامج داخل الحاسبة</span>
+                <button type="button" onclick="copySavedFilePath()" style="background:#e0e7ff; color:#1e40af; border:1px solid #a5b4fc; padding:0.2rem 0.65rem; border-radius:0.4rem; font-size:0.78rem; font-weight:700; cursor:pointer;">📋 نسخ المسار</button>
+            </div>
+        </div>
+
+        <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:0.85rem; padding:0.9rem 1rem; margin-bottom:1.25rem;">
+            <div style="font-size:1rem; font-weight:800; color:#92400e;">❓ سؤال: هل تريد فتح مكان حفظ الملف في الحاسبة لمعرفة مكانه، أو اختيار مكان آخر لحفظه؟</div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+            <button type="button" onclick="revealSavedFileInExplorer()" style="background:linear-gradient(135deg,#059669,#047857); color:white; border:none; padding:0.75rem 1rem; border-radius:0.75rem; font-weight:800; font-size:0.92rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.4rem;">
+                📂 نعم، افتح مكان الملف في الحاسبة
+            </button>
+            <button type="button" onclick="openSavedFileDirectly()" style="background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white; border:none; padding:0.75rem 1rem; border-radius:0.75rem; font-weight:800; font-size:0.92rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.4rem;">
+                📄 فتح وتشغيل الملف الآن
+            </button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr auto; gap:0.75rem;">
+            <button type="button" onclick="chooseCustomSaveLocation()" style="background:linear-gradient(135deg,#7c3aed,#6d28d9); color:white; border:none; padding:0.7rem 1rem; border-radius:0.75rem; font-weight:700; font-size:0.88rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.4rem;">
+                📍 اختيار مكان آخر للحفظ (حفظ باسم...)
+            </button>
+            <button type="button" onclick="closeFileLocationQuestionModal()" style="background:#e2e8f0; color:#1e293b; border:none; padding:0.7rem 1.4rem; border-radius:0.75rem; font-weight:800; font-size:0.9rem; cursor:pointer;">
+                إغلاق
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== تذييل الصفحة (الفوتر) ==================== -->
+<footer class="text-white/90 py-6 mt-8 text-sm no-print max-w-7xl mx-auto" style="direction: rtl;">
+    <p class="text-center" style="font-size: 0.95rem; font-weight: 600; margin: 0; padding: 1rem 0;">تصميم وبرمجة م.م صفاء هادي عبد العالي - مدير قسم الاعداد والتدريب -تربية المثنى / جميع الحقوق محفوظة 2026</p>
+</footer>
+
+<script>
+const categories = [
+{ key: 'workshops', actId: 'cat_workshops_act', trnId: 'cat_workshops_trn' },
+{ key: 'lessons', actId: 'cat_lessons_act', trnId: 'cat_lessons_trn' },
+{ key: 'symposiums', actId: 'cat_symposiums_act', trnId: 'cat_symposiums_trn' },
+{ key: 'exhibitions', actId: 'cat_exhibitions_act', trnId: 'cat_exhibitions_trn' },
+{ key: 'films', actId: 'cat_films_act', trnId: 'cat_films_trn' },
+{ key: 'visits', actId: 'cat_visits_act', trnId: 'cat_visits_trn' },
+{ key: 'matches', actId: 'cat_matches_act', trnId: 'cat_matches_trn' },
+{ key: 'convoys', actId: 'cat_convoys_act', trnId: 'cat_convoys_trn' },
+{ key: 'seasons', actId: 'cat_seasons_act', trnId: 'cat_seasons_trn' }
+];
+
+let currentUser = null;
+let totalReportData = [];
+
+const ROLE_PERMISSIONS = {
+    'admin': ['home', 'statistics', 'trainees', 'bulkTrainees', 'leaders', 'total_report', 'correspondence', 'excel_sorter', 'dashboard'],
+    'group1': ['home', 'statistics', 'leaders', 'total_report', 'correspondence', 'excel_sorter'],
+    'group2': ['home', 'trainees', 'bulkTrainees', 'correspondence', 'excel_sorter'],
+    'group3': ['home', 'statistics', 'trainees', 'bulkTrainees', 'leaders', 'total_report', 'correspondence', 'excel_sorter']
+};
+
+const SECTIONS_CONFIG = [
+    { id: 'home', title: 'الصفحة الرئيسية', url: 'index.html?section=home' },
+    { id: 'statistics', title: 'الإحصائيات', url: 'index.html?section=statistics' },
+    { id: 'trainees', title: 'المتدربين', url: 'index.html?section=trainees' },
+    { id: 'bulkTrainees', title: 'إضافة مجموعة', url: 'index.html?section=bulkTrainees' },
+    { id: 'leaders', title: 'قادة التدريب', url: 'index.html?section=leaders' },
+    { id: 'total_report', title: 'التقرير الكلي', url: 'total_report.html' },
+    { id: 'correspondence', title: 'الوارد والصادر', url: 'index.html?section=correspondence' },
+    { id: 'excel_sorter', title: 'فرز Excel', url: 'excel_sorter.html' },
+    { id: 'dashboard', title: 'لوحة التحكم', url: 'index.html?section=dashboard' }
+];
+
+function checkSession() {
+const defaultAdminUser = { username: 'admin', role: 'admin', active: true, status: 'active', allowTotalReport: true };
+let savedUser = sessionStorage.getItem('currentUser');
+if (!savedUser) {
+    currentUser = defaultAdminUser;
+    try { sessionStorage.setItem('currentUser', JSON.stringify(currentUser)); } catch(e){}
+} else {
+    try { currentUser = JSON.parse(savedUser); } catch(e) { currentUser = defaultAdminUser; }
+}
+if (!currentUser || !currentUser.username || currentUser.active === false) {
+    currentUser = defaultAdminUser;
+    try { sessionStorage.setItem('currentUser', JSON.stringify(currentUser)); } catch(e){}
+}
+
+// Strict Role Enforcement
+const allowed = ROLE_PERMISSIONS[currentUser.role] || [];
+if (!allowed.includes('total_report')) {
+    currentUser.role = 'admin';
+    try { sessionStorage.setItem('currentUser', JSON.stringify(currentUser)); } catch(e){}
+}
+
+document.getElementById('currentUserName').textContent = currentUser.username;
+const roleBadge = document.getElementById('currentUserRoleBadge');
+if (roleBadge) {
+    roleBadge.textContent = getRoleName(currentUser.role);
+    roleBadge.className = 'role-badge role-' + currentUser.role;
+}
+updateNavState();
+}
+
+function updateNavState() {
+    if (!currentUser) return;
+    const allowed = ROLE_PERMISSIONS[currentUser.role] || [];
+    const curIdx = allowed.indexOf('total_report');
+    const prevBtn = document.getElementById('btnNavPrev');
+    const nextBtn = document.getElementById('btnNavNext');
+    if (prevBtn) prevBtn.disabled = (curIdx <= 0);
+    if (nextBtn) nextBtn.disabled = (curIdx < 0 || curIdx >= allowed.length - 1);
+}
+
+function navGoHome() {
+    window.location.href = 'index.html?section=home';
+}
+
+function navGoPrev() {
+    if (!currentUser) return;
+    const allowed = ROLE_PERMISSIONS[currentUser.role] || [];
+    const curIdx = allowed.indexOf('total_report');
+    if (curIdx > 0) {
+        const prevId = allowed[curIdx - 1];
+        const sec = SECTIONS_CONFIG.find(s => s.id === prevId);
+        if (sec) window.location.href = sec.url;
+    }
+}
+
+function navGoNext() {
+    if (!currentUser) return;
+    const allowed = ROLE_PERMISSIONS[currentUser.role] || [];
+    const curIdx = allowed.indexOf('total_report');
+    if (curIdx >= 0 && curIdx < allowed.length - 1) {
+        const nextId = allowed[curIdx + 1];
+        const sec = SECTIONS_CONFIG.find(s => s.id === nextId);
+        if (sec) window.location.href = sec.url;
+    }
+}
+
+function getRoleName(role) {
+const names = {'admin':'أدمن','group1':'مجموعة 1','group2':'مجموعة 2','group3':'مجموعة 3 (شامل)'};
+return names[role] || role;
+}
+
+function performLogout() {
+    if (confirm('هل أنت متأكد من الخروج وإغلاق التطبيق؟')) {
+        if (typeof flushPendingBackupSync === 'function') {
+            try { flushPendingBackupSync(); } catch(e){}
+        }
+        fetch('/api/close-app', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ totalReportData: totalReportData, allowEmptyOverwrite: false }),
+            keepalive: true
+        }).finally(() => {
+            try { window.close(); } catch(e){}
+        });
+        setTimeout(() => {
+            try { window.close(); } catch(e){}
+        }, 250);
+    }
+}
+
+function resetCategoryInputs() {
+    categories.forEach(cat => {
+        const actEl = document.getElementById(cat.actId);
+        const trnEl = document.getElementById(cat.trnId);
+        if (actEl) actEl.value = 0;
+        if (trnEl) trnEl.value = 0;
+    });
+}
+
+function clearFields() {
+    resetCategoryInputs();
+    if (editingRecordId) {
+        cancelEdit();
+    }
+}
+
+const REPORT_MONTHS_LIST = [
+    'كانون الثاني / (1)', 'شباط / (2)', 'آذار / (3)', 'نيسان / (4)',
+    'ايار / (5)', 'حزيران / (6)', 'تموز / (7)', 'آب / (8)',
+    'أيلول / (9)', 'تشرين الأول / (10)', 'تشرين الثاني / (11)', 'كانون الأول / (12)'
+];
+
+function mapActivityTypeToCategory(activityType) {
+    const t = (activityType || '').trim();
+    if (!t) return 'workshops';
+    if (t.includes('دورة') || t.includes('حلقة') || t.includes('ورشة') || t.includes('حلقات') || t.includes('ورش')) return 'workshops';
+    if (t.includes('درس') || t.includes('دروس')) return 'lessons';
+    if (t.includes('ندوة') || t.includes('ندوات') || t.includes('محاضرات') || t.includes('محاضرة') || t.includes('اجتماع')) return 'symposiums';
+    if (t.includes('معرض') || t.includes('معارض') || t.includes('مهرجان')) return 'exhibitions';
+    if (t.includes('فيلم') || t.includes('أفلام') || t.includes('افلام')) return 'films';
+    if (t.includes('زيارة') || t.includes('زيارات') || t.includes('سفرة') || t.includes('سفرات')) return 'visits';
+    if (t.includes('مباراة') || t.includes('مباريات')) return 'matches';
+    if (t.includes('قافلة') || t.includes('قوافل')) return 'convoys';
+    if (t.includes('موسم') || t.includes('مواسم')) return 'seasons';
+    return 'workshops';
+}
+
+function syncFromStatisticsData(statsList) {
+    if (!Array.isArray(totalReportData)) totalReportData = [];
+    if (Array.isArray(statsList) && statsList.length > 0) {
+        const activitiesData = {};
+        categories.forEach(cat => { activitiesData[cat.key] = { act: 0, trn: 0 }; });
+
+        let latestYear = parseInt(document.getElementById('reportYear').value) || 2026;
+        let latestMonth = document.getElementById('reportMonth').value || 'تموز / (7)';
+
+        statsList.forEach(item => {
+            const key = mapActivityTypeToCategory(item.activityType);
+            const trnCount = parseInt(item.totalCount) || ((parseInt(item.maleCount) || 0) + (parseInt(item.femaleCount) || 0));
+            if (activitiesData[key]) {
+                activitiesData[key].act += 1;
+                activitiesData[key].trn += trnCount;
+            }
+            if (item.executionDate) {
+                const parts = String(item.executionDate).split(/[-/]/);
+                if (parts.length >= 2) {
+                    const y = parseInt(parts[0], 10);
+                    const m = parseInt(parts[1], 10);
+                    if (y >= 2020 && y <= 2050) latestYear = y;
+                    if (m >= 1 && m <= 12) latestMonth = REPORT_MONTHS_LIST[m - 1];
+                }
+            }
+        });
+
+        const directorateVal = (document.getElementById('directorateName') ? document.getElementById('directorateName').value.trim() : '') || 'مديرية تربية المثنى/شعبة التدريب';
+        const syncedRow = {
+            id: 'synced_stats_row',
+            isSyncedFromStats: true,
+            directorate: directorateVal,
+            year: latestYear,
+            month: latestMonth,
+            data: activitiesData
+        };
+
+        const existingIdx = totalReportData.findIndex(r => r && (r.id === 'synced_stats_row' || r.isSyncedFromStats));
+        if (existingIdx !== -1) {
+            if (!totalReportData[existingIdx].isManuallyEdited) {
+                totalReportData[existingIdx] = syncedRow;
+            }
+        } else {
+            totalReportData.unshift(syncedRow);
+        }
+
+        const yearEl = document.getElementById('reportYear');
+        const monthEl = document.getElementById('reportMonth');
+        if (yearEl && latestYear) yearEl.value = latestYear;
+        if (monthEl && latestMonth) monthEl.value = latestMonth;
+    } else if (window.isInitialBackupLoaded && Array.isArray(statsList) && statsList.length === 0) {
+        totalReportData = totalReportData.filter(r => !(r && (r.id === 'synced_stats_row' || r.isSyncedFromStats)));
+    }
+    try { localStorage.setItem('totalReportData', JSON.stringify(totalReportData)); } catch(e){}
+}
+
+window.isInitialBackupLoaded = false;
+
+function loadData() {
+const stored = localStorage.getItem('totalReportData');
+if (stored) {
+    try { totalReportData = JSON.parse(stored); } catch(e) { totalReportData = []; }
+} else {
+    totalReportData = [];
+}
+
+try {
+    const localBackup = JSON.parse(localStorage.getItem('trainingBackupData') || '{}');
+    if (Array.isArray(localBackup.totalReportData) && localBackup.totalReportData.length > 0 && totalReportData.length === 0) {
+        totalReportData = localBackup.totalReportData;
+    }
+    if (Array.isArray(localBackup.statisticsData) && localBackup.statisticsData.length > 0) {
+        syncFromStatisticsData(localBackup.statisticsData);
+    }
+} catch(e) {}
+
+renderTable();
+
+// مزامنة النشاطات المحفوظة من ملف الحاسبة (السيرفر الخلفي)
+fetch('/api/backup-data', { cache: 'no-store' })
+    .then(r => r.json())
+    .then(d => {
+        if (d && typeof d === 'object') {
+            if (Array.isArray(d.totalReportData) && d.totalReportData.length > 0) {
+                totalReportData = d.totalReportData;
+            }
+            window.isInitialBackupLoaded = true;
+            if (Array.isArray(d.statisticsData)) {
+                syncFromStatisticsData(d.statisticsData);
+            }
+            try {
+                localStorage.setItem('totalReportData', JSON.stringify(totalReportData));
+                const mergedLocal = Object.assign({}, d, { totalReportData: totalReportData });
+                localStorage.setItem('trainingBackupData', JSON.stringify(mergedLocal));
+            } catch(e){}
+            renderTable();
+            if (totalReportData.length > 0) {
+                saveData(false);
+            }
+        } else {
+            window.isInitialBackupLoaded = true;
+        }
+    })
+    .catch(e => {
+        console.warn('Could not sync totalReportData from server:', e);
+        window.isInitialBackupLoaded = true;
+    });
+}
+
+window.addEventListener('storage', function(e) {
+    if (e.key === 'trainingBackupData' || e.key === 'totalReportData') {
+        loadData();
+    }
+});
+
+function saveData(allowEmptyOverwrite = false) {
+if (!window.isInitialBackupLoaded && !allowEmptyOverwrite) return;
+try { localStorage.setItem('totalReportData', JSON.stringify(totalReportData)); } catch(e){}
+// تحديث النسخة الاحتياطية الموحدة وملف النشاطات داخل الحاسبة
+try {
+    const existingBackup = JSON.parse(localStorage.getItem('trainingBackupData') || '{}');
+    existingBackup.totalReportData = totalReportData;
+    existingBackup.systemLogs = JSON.parse(localStorage.getItem('systemLogs') || '[]');
+    existingBackup.lastUpdated = new Date().toISOString();
+    localStorage.setItem('trainingBackupData', JSON.stringify(existingBackup));
+    fetch('/api/backup-data', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            totalReportData: totalReportData,
+            systemLogs: existingBackup.systemLogs,
+            allowEmptyOverwrite: Boolean(allowEmptyOverwrite)
+        }),
+        keepalive: true
+    }).catch(err => console.warn('Backup sync error:', err));
+    if (window.FirebaseSync && typeof FirebaseSync.scheduleAutoPush === 'function') {
+        FirebaseSync.scheduleAutoPush(() => existingBackup);
+    }
+} catch(e) {
+    console.warn('Error syncing totalReportData:', e);
+}
+}
+
+function flushPendingBackupSync() {
+    if (!window.isInitialBackupLoaded) return;
+    try {
+        localStorage.setItem('totalReportData', JSON.stringify(totalReportData));
+        const logs = JSON.parse(localStorage.getItem('systemLogs') || '[]');
+        const payloadStr = JSON.stringify({
+            totalReportData: totalReportData,
+            systemLogs: logs,
+            allowEmptyOverwrite: false
+        });
+        if (navigator.sendBeacon) {
+            const blob = new Blob([payloadStr], { type: 'application/json' });
+            navigator.sendBeacon('/api/backup-data', blob);
+        } else {
+            fetch('/api/backup-data', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: payloadStr,
+                keepalive: true
+            }).catch(() => {});
+        }
+    } catch (e) {}
+}
+
+window.addEventListener('beforeunload', flushPendingBackupSync);
+window.addEventListener('pagehide', flushPendingBackupSync);
+
+function addToReport() {
+const directorate = document.getElementById('directorateName').value.trim();
+const year = parseInt(document.getElementById('reportYear').value) || 2026;
+const month = document.getElementById('reportMonth').value;
+if (!directorate) { alert('يرجى إدخال اسم المديرية'); return; }
+
+const activitiesData = {};
+categories.forEach(cat => {
+activitiesData[cat.key] = {
+act: parseInt(document.getElementById(cat.actId).value) || 0,
+trn: parseInt(document.getElementById(cat.trnId).value) || 0
+};
+});
+
+const newRecord = {
+id: Date.now(),
+directorate: directorate,
+year: year,
+month: month,
+data: activitiesData
+};
+
+totalReportData.push(newRecord);
+logSystemAction('إضافة صف تقرير كلي للمديرية: ' + directorate);
+saveData();
+renderTable();
+clearFields();
+alert('تم إضافة السجل وحفظه في ملف النشاطات داخل الحاسبة بنجاح');
+}
+
+let editingRecordId = null;
+
+function editRecord(id) {
+    const record = totalReportData.find(r => String(r.id) === String(id));
+    if (!record) return;
+
+    editingRecordId = id;
+
+    // Fill directorate, year, month
+    const dirEl = document.getElementById('directorateName');
+    const yearEl = document.getElementById('reportYear');
+    const monthEl = document.getElementById('reportMonth');
+
+    if (dirEl) dirEl.value = record.directorate || '';
+    if (yearEl && record.year) yearEl.value = record.year;
+    if (monthEl && record.month) monthEl.value = record.month;
+
+    categories.forEach(cat => {
+        const catData = (record.data && record.data[cat.key]) ? record.data[cat.key] : { act: 0, trn: 0 };
+        const actEl = document.getElementById(cat.actId);
+        const trnEl = document.getElementById(cat.trnId);
+        if (actEl) actEl.value = catData.act || 0;
+        if (trnEl) trnEl.value = catData.trn || 0;
+    });
+
+    // Update header labels for preview
+    const headY = document.getElementById('headerYear');
+    const headM = document.getElementById('headerMonth');
+    if (headY && yearEl) headY.textContent = yearEl.value;
+    if (headM && monthEl) headM.textContent = monthEl.value;
+
+    // Show editing banner and buttons
+    const banner = document.getElementById('editingBanner');
+    if (banner) {
+        banner.style.display = 'flex';
+        const titleEl = document.getElementById('editingRecordTitle');
+        if (titleEl) titleEl.textContent = (record.directorate || 'السجل') + ' (' + (record.year || '') + ' - ' + (record.month || '') + ')';
+    }
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    const saveBtn = document.getElementById('saveEditBtn');
+    const addBtn = document.getElementById('addBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    if (cancelBtn) cancelBtn.style.display = 'inline-flex';
+    if (saveBtn) saveBtn.style.display = 'inline-flex';
+    if (addBtn) addBtn.style.display = 'none';
+    if (clearBtn) clearBtn.style.display = 'none';
+
+    renderTable();
+
+    // Scroll smoothly to form section
+    const targetSection = document.getElementById('totalReportFormSection') || dirEl;
+    if (targetSection) {
+        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    if (dirEl) dirEl.focus();
+}
+
+function cancelEdit() {
+    editingRecordId = null;
+    resetCategoryInputs();
+
+    const banner = document.getElementById('editingBanner');
+    if (banner) banner.style.display = 'none';
+
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    const saveBtn = document.getElementById('saveEditBtn');
+    const addBtn = document.getElementById('addBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    if (cancelBtn) cancelBtn.style.display = 'none';
+    if (saveBtn) saveBtn.style.display = 'none';
+    if (addBtn) addBtn.style.display = 'inline-flex';
+    if (clearBtn) clearBtn.style.display = 'inline-flex';
+
+    renderTable();
+}
+
+function saveEditedRecord() {
+    if (!editingRecordId) return;
+
+    const record = totalReportData.find(r => String(r.id) === String(editingRecordId));
+    if (!record) {
+        alert('تعذر العثور على السجل المراد تعديله.');
+        cancelEdit();
+        return;
+    }
+
+    const directorate = document.getElementById('directorateName').value.trim();
+    const year = parseInt(document.getElementById('reportYear').value) || 2026;
+    const month = document.getElementById('reportMonth').value;
+
+    if (!directorate) {
+        alert('يرجى إدخال اسم المديرية');
+        return;
+    }
+
+    const activitiesData = {};
+    categories.forEach(cat => {
+        activitiesData[cat.key] = {
+            act: parseInt(document.getElementById(cat.actId).value) || 0,
+            trn: parseInt(document.getElementById(cat.trnId).value) || 0
+        };
+    });
+
+    record.directorate = directorate;
+    record.year = year;
+    record.month = month;
+    record.data = activitiesData;
+    if (record.isSyncedFromStats) {
+        record.isManuallyEdited = true;
+    }
+
+    logSystemAction('تعديل صف تقرير كلي للمديرية: ' + directorate);
+    saveData();
+    cancelEdit();
+    alert('تم حفظ تعديلات السجل بنجاح');
+}
+
+function deleteRecord(id) {
+if (confirm('هل أنت متأكد من حذف هذا السجل؟')) {
+const record = totalReportData.find(r => String(r.id) === String(id));
+totalReportData = totalReportData.filter(r => String(r.id) !== String(id));
+if (record) logSystemAction('حذف صف تقرير كلي للمديرية: ' + record.directorate);
+if (editingRecordId && String(editingRecordId) === String(id)) {
+    cancelEdit();
+}
+saveData(true);
+renderTable();
+}
+}
+
+function logSystemAction(description) {
+const logs = JSON.parse(localStorage.getItem('systemLogs') || '[]');
+logs.unshift({
+id: Date.now(),
+timestamp: new Date().toISOString(),
+username: currentUser ? currentUser.username : 'غير معروف',
+userRole: currentUser ? getRoleName(currentUser.role) : 'غير معروف',
+action: 'add',
+description: description
+});
+if (logs.length > 1000) logs.length = 1000;
+localStorage.setItem('systemLogs', JSON.stringify(logs));
+}
+
+function renderTable() {
+const yearInput = document.getElementById('reportYear').value;
+const monthInput = document.getElementById('reportMonth').value;
+document.getElementById('headerYear').textContent = yearInput;
+document.getElementById('headerMonth').textContent = monthInput;
+
+const tbody = document.getElementById('reportTableBody');
+const tfoot = document.getElementById('reportTableFooter');
+tbody.innerHTML = '';
+tfoot.innerHTML = '';
+document.getElementById('directorateCount').textContent = totalReportData.length;
+
+if (totalReportData.length === 0) {
+tbody.innerHTML = '<tr><td colspan="23" style="padding: 2rem; text-align: center; color: #6b7280; font-weight: 700;">لا توجد سجلات. يرجى ملء الحقول في الأعلى والإضافة.</td></tr>';
+return;
+}
+
+const colTotals = {
+workshops: {act:0, trn:0}, lessons: {act:0, trn:0}, symposiums: {act:0, trn:0},
+exhibitions: {act:0, trn:0}, films: {act:0, trn:0}, visits: {act:0, trn:0},
+matches: {act:0, trn:0}, convoys: {act:0, trn:0}, seasons: {act:0, trn:0},
+grandTotal: {act:0, trn:0}
+};
+
+totalReportData.forEach((row, index) => {
+const isEditingThisRow = (editingRecordId && String(editingRecordId) === String(row.id));
+const rowStyle = isEditingThisRow ? 'style="background-color: #fef3c7 !important; outline: 2px solid #f59e0b;"' : '';
+let rowHtml = '<tr ' + rowStyle + '><td>' + (index+1) + '</td><td style="font-weight: 700; color: #1e293b; text-align: right;">' + row.directorate + (isEditingThisRow ? ' <span style="display:inline-block; font-size:0.75rem; background:#fef08a; color:#b45309; padding:1px 6px; border-radius:4px; margin-right:4px; font-weight:bold;">قيد التعديل</span>' : '') + '</td>';
+let rowTotalAct = 0, rowTotalTrn = 0;
+categories.forEach(cat => {
+const catData = row.data[cat.key] || {act:0, trn:0};
+rowHtml += '<td>' + catData.act + '</td><td>' + catData.trn + '</td>';
+rowTotalAct += catData.act;
+rowTotalTrn += catData.trn;
+colTotals[cat.key].act += catData.act;
+colTotals[cat.key].trn += catData.trn;
+});
+rowHtml += '<td class="total-cell">' + rowTotalAct + '</td><td class="total-cell">' + rowTotalTrn + '</td>';
+colTotals.grandTotal.act += rowTotalAct;
+colTotals.grandTotal.trn += rowTotalTrn;
+rowHtml += '<td class="no-print" style="white-space: nowrap; text-align: center;">' +
+    '<button type="button" onclick="editRecord(\'' + row.id + '\')" title="تعديل السجل" style="color:#2563eb; background:none; border:none; cursor:pointer; font-size:1.2rem; margin-left:8px; vertical-align:middle; transition:transform 0.15s ease;" onmouseover="this.style.transform=\'scale(1.25)\'" onmouseout="this.style.transform=\'scale(1)\'">✏️</button>' +
+    '<button type="button" onclick="deleteRecord(\'' + row.id + '\')" title="حذف السجل" style="color:#dc2626; background:none; border:none; cursor:pointer; font-size:1.2rem; vertical-align:middle; transition:transform 0.15s ease;" onmouseover="this.style.transform=\'scale(1.25)\'" onmouseout="this.style.transform=\'scale(1)\'">🗑️</button>' +
+    '</td>';
+rowHtml += '</tr>';
+tbody.innerHTML += rowHtml;
+});
+
+let footerHtml = '<tr class="summary-row"><td colspan="2">المجموع الكلي</td>';
+categories.forEach(cat => {
+footerHtml += '<td>' + colTotals[cat.key].act + '</td><td>' + colTotals[cat.key].trn + '</td>';
+});
+footerHtml += '<td class="total-cell">' + colTotals.grandTotal.act + '</td><td class="total-cell">' + colTotals.grandTotal.trn + '</td>';
+footerHtml += '<td class="no-print"></td></tr>';
+tfoot.innerHTML = footerHtml;
+}
+
+document.getElementById('reportYear').addEventListener('input', () => {
+document.getElementById('headerYear').textContent = document.getElementById('reportYear').value;
+});
+document.getElementById('reportMonth').addEventListener('change', () => {
+document.getElementById('headerMonth').textContent = document.getElementById('reportMonth').value;
+});
+
+let lastSavedFileInfo = { fileName: '', filePath: '', folderPath: '', base64Content: '' };
+
+function backupFile(fileName, base64Content) {
+    if (!base64Content) return;
+    fetch('/api/save-file', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ fileName: fileName, fileContent: base64Content })
+    }).catch(e => console.warn(e));
+}
+
+function saveAndAskLocation(fileName, base64Content, fallbackDownloadFn) {
+    lastSavedFileInfo = { fileName: fileName, filePath: '', folderPath: '', base64Content: base64Content || '' };
+    if (!base64Content) {
+        if (typeof fallbackDownloadFn === 'function') fallbackDownloadFn();
+        return;
+    }
+    fetch('/api/save-file', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ fileName: fileName, fileContent: base64Content })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d && d.success) {
+            lastSavedFileInfo.filePath = d.path || '';
+            lastSavedFileInfo.folderPath = d.folder || '';
+            showFileLocationQuestionModal(d.fileName || fileName, d.path || '', d.exeActivityPath || '');
+        } else {
+            if (typeof fallbackDownloadFn === 'function') fallbackDownloadFn();
+            showFileLocationQuestionModal(fileName, 'مجلد التنزيلات (Downloads) أو المستندات\\تقارير_احصائيات_التدريب', '');
+        }
+    })
+    .catch(err => {
+        if (typeof fallbackDownloadFn === 'function') fallbackDownloadFn();
+        showFileLocationQuestionModal(fileName, 'مجلد التنزيلات (Downloads) في الحاسبة', '');
+    });
+}
+
+function showFileLocationQuestionModal(fileName, savedPath, secondaryPath) {
+    const modal = document.getElementById('fileLocationQuestionModal');
+    if (!modal) return;
+    const nameEl = document.getElementById('questionSavedFileName');
+    const pathEl = document.getElementById('questionSavedFilePath');
+    if (nameEl) nameEl.textContent = '📄 اسم الملف: ' + fileName;
+    if (pathEl) pathEl.textContent = savedPath + (secondaryPath ? '\nنسخة إضافية: ' + secondaryPath : '');
+    modal.style.display = 'flex';
+}
+
+function closeFileLocationQuestionModal() {
+    const modal = document.getElementById('fileLocationQuestionModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function revealSavedFileInExplorer() {
+    fetch('/api/reveal-file', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ filePath: lastSavedFileInfo.filePath, fileName: lastSavedFileInfo.fileName })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (!d.success) fetch('/api/open-reports-dir');
+    })
+    .catch(() => fetch('/api/open-reports-dir'));
+}
+
+function openSavedFileDirectly() {
+    fetch('/api/open-file', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ filePath: lastSavedFileInfo.filePath, fileName: lastSavedFileInfo.fileName })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (!d.success) alert('يرجى فتح مكان الملف في الحاسبة أولاً.');
+    })
+    .catch(() => alert('يرجى فتح مكان الملف في الحاسبة أولاً.'));
+}
+
+function chooseCustomSaveLocation() {
+    if (!lastSavedFileInfo.base64Content) {
+        alert('لا يتوفر محتوى لحفظه في مكان آخر.');
+        return;
+    }
+    fetch('/api/save-file-as', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ fileName: lastSavedFileInfo.fileName, fileContent: lastSavedFileInfo.base64Content })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d && d.success && d.path) {
+            lastSavedFileInfo.filePath = d.path;
+            const pathEl = document.getElementById('questionSavedFilePath');
+            if (pathEl) pathEl.textContent = d.path;
+            alert('✅ تم حفظ الملف في المكان الجديد بنجاح:\n' + d.path);
+        }
+    })
+    .catch(e => console.warn(e));
+}
+
+function copySavedFilePath() {
+    const pathText = lastSavedFileInfo.filePath || (document.getElementById('questionSavedFilePath') ? document.getElementById('questionSavedFilePath').textContent : '');
+    if (!pathText) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pathText).then(() => alert('✅ تم نسخ مسار الملف:\n' + pathText));
+    } else {
+        prompt('انسخ مسار الملف:', pathText);
+    }
+}
+
+function showActivitiesFolderInfo() {
+    fetch('/api/activities-info')
+        .then(r => r.json())
+        .then(d => {
+            if (d && d.success) {
+                lastSavedFileInfo = {
+                    fileName: 'ملف_النشاطات_المحفوظة.json',
+                    filePath: d.activitiesFile || d.docsActivitiesFile || d.folder || '',
+                    folderPath: d.folder || '',
+                    base64Content: ''
+                };
+                showFileLocationQuestionModal(
+                    'ملف النشاطات المحفوظة في الحاسبة (التقرير الكلي وجميع الصفحات)',
+                    (d.docsActivitiesFile || d.folder) + '\nومجلد البرنامج: ' + (d.activitiesFile || d.exeActivitiesFolder || ''),
+                    ''
+                );
+            } else {
+                fetch('/api/open-reports-dir');
+            }
+        })
+        .catch(() => fetch('/api/open-reports-dir'));
+}
+
+function exportExcel() {
+if (totalReportData.length === 0) { alert('لا توجد بيانات'); return; }
+const tableElement = document.getElementById('reportTable');
+const clonedTable = tableElement.cloneNode(true);
+clonedTable.querySelectorAll('.no-print').forEach(el => el.remove());
+const wb = XLSX.utils.table_to_book(clonedTable, {raw: true});
+const monthName = document.getElementById('reportMonth').value.split('/')[0].trim();
+const yearName = document.getElementById('reportYear').value;
+const fileName = 'تقرير_كلي_اللجان_' + monthName + '_' + yearName + '.xlsx';
+const b64 = XLSX.write(wb, {bookType:'xlsx', type:'base64'});
+logSystemAction('تصدير Excel للتقرير الكلي');
+saveAndAskLocation(fileName, b64, () => XLSX.writeFile(wb, fileName));
+}
+
+function exportWord() {
+if (totalReportData.length === 0) { alert('لا توجد بيانات'); return; }
+const monthName = document.getElementById('reportMonth').value.split('/')[0].trim();
+const yearName = document.getElementById('reportYear').value;
+const currentDate = new Date().toLocaleDateString('ar-IQ');
+let htmlContent = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>التقرير الكلي</title><style>@page{size:29.7cm 21cm; margin:1cm 1.5cm; mso-page-orientation:landscape;}body{font-family:Arial; direction:rtl; text-align:right; font-size:10pt;}.data-table{width:100%; border-collapse:collapse;}.data-table th,.data-table td{border:1px solid #000; padding:5px; text-align:center; font-size:9pt;}.data-table th{background-color:#ffffff; color:#000000; font-weight:bold; border:1px solid #000000;}.total-cell{background-color:#ffe4e6 !important; font-weight:bold;}.summary-row{background-color:#e0f2fe !important; font-weight:bold;}.header-table{width:100%; border-collapse:collapse; margin-bottom:10px;}.header-table td{padding:5px; font-weight:bold; font-size:11pt;}.title{text-align:center; font-size:14pt; font-weight:bold; margin:10px 0;}</style></head><body>';
+htmlContent += '<table class="header-table"><tr><td style="text-align:right; width:50%;">جمهورية العراق<br>وزارة التربية<br>المديرية العامة لتربية المثنى</td><td style="text-align:left; width:50%;">قسم الإعداد والتدريب<br>شعبة التدريب<br>التاريخ: ' + currentDate + '</td></tr></table><hr>';
+htmlContent += '<div class="title">التقرير الكلي للجان العلمية لعام ' + yearName + ' لشهر ' + monthName + '</div>';
+const clonedTable = document.getElementById('reportTable').cloneNode(true);
+clonedTable.querySelectorAll('.no-print').forEach(el => el.remove());
+htmlContent += clonedTable.outerHTML;
+htmlContent += '</body></html>';
+const docFileName = 'التقرير_الكلي_' + monthName + '_' + yearName + '.doc';
+const b64 = btoa(unescape(encodeURIComponent('\ufeff' + htmlContent)));
+logSystemAction('تصدير Word للتقرير الكلي');
+saveAndAskLocation(docFileName, b64, () => {
+    const blob = new Blob(['\ufeff', htmlContent], {type: 'application/msword'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url; link.download = docFileName;
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+});
+}
+
+function sendReportByEmail(event) {
+if (totalReportData.length === 0) { alert('لا توجد بيانات'); return; }
+const tableElement = document.getElementById('reportTable');
+const clonedTable = tableElement.cloneNode(true);
+clonedTable.querySelectorAll('.no-print').forEach(el => el.remove());
+const wb = XLSX.utils.table_to_book(clonedTable, {raw: true});
+const monthName = document.getElementById('reportMonth').value.split('/')[0].trim();
+const yearName = document.getElementById('reportYear').value;
+const fileContentBase64 = XLSX.write(wb, {bookType:'xlsx', type:'base64'});
+const fileName = 'تقرير_كلي_' + monthName + '_' + yearName + '.xlsx';
+const btn = event.currentTarget;
+btn.disabled = true;
+fetch('/api/send-email', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({fileContent:fileContentBase64, fileName:fileName, subject:'التقرير الكلي لشهر: ' + monthName, body:'مرفق تقرير اللجان العلمية'})}).then(r=>r.json()).then(d=>{btn.disabled=false; if(d.success) { alert('تم الإرسال'); logSystemAction('إرسال التقرير الكلي بالبريد'); } else alert('فشل: '+d.error);}).catch(e=>{btn.disabled=false; alert('خطأ');});
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+checkSession();
+loadData();
+});
+</script>
+</body>
+</html>

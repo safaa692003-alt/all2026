@@ -1,0 +1,2667 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق فرز بيانات Excel - وزارة التربية</title>
+    <link rel="icon" type="image/x-icon" href="app_icon.ico">
+    <script src="xlsx.full.min.js"></script>
+    <script src="docx.umd.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 15px;
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+        }
+
+        .header-image-container {
+            width: 100%;
+            max-width: 1500px;
+            margin: 0 auto 1.5rem auto;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+            border: 2px solid #1e293b;
+            background: #ffffff;
+        }
+
+        .header-image-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .official-header {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 15px 30px;
+            border-bottom: 4px solid #1e3c72;
+            position: relative;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-section { flex: 1; display: flex; align-items: center; }
+        .header-section-right { justify-content: flex-end; padding-left: 90px; }
+        .header-section-left { justify-content: flex-start; padding-right: 90px; }
+        .header-text-block { display: flex; flex-direction: column; line-height: 1.2; }
+        .header-text-right { text-align: right; }
+        .header-text-left { text-align: left; }
+        .ministry-name { font-size: 17px; font-weight: bold; color: #1e3c72; white-space: nowrap; }
+        .department-name { font-size: 14px; color: #2a5298; font-weight: bold; white-space: nowrap; }
+        .header-logo-center {
+            position: absolute; left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            width: 85px; height: 85px; object-fit: contain; z-index: 5;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .header-logo-center:hover {
+            transform: translate(-50%, -50%) scale(1.08);
+            filter: drop-shadow(0 6px 14px rgba(30,60,114,0.3));
+        }
+
+        .toolbar {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 9px 16px;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            color: white;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-open { background: #3498db; }
+        .btn-add-sort { background: #16a085; }
+        .btn-sort { background: #27ae60; }
+        .btn-add-filter { background: #e67e22; }
+        .btn-filter { background: #e74c3c; }
+        .btn-reset { background: #f39c12; }
+        .btn-save-excel { background: #27ae60; }
+        .btn-save-word { background: #2980b9; }
+        .btn-secondary { background: #95a5a6; }
+        .btn-info { background: #17a2b8; }
+        .btn-warning { background: #ffc107; color: #000; }
+        .btn-purple { background: #9b59b6; }
+        .btn-danger { background: #dc3545; }
+        .btn-success { background: #28a745; }
+
+        .file-input { display: none; }
+
+        .table-controls {
+            background: #fff8e1;
+            padding: 10px 20px;
+            border-bottom: 2px solid #ffc107;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .table-controls label { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #2c3e50; }
+        .table-controls input[type="number"], .table-controls select { padding: 5px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-weight: bold; width: 70px; }
+        .table-controls input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+        .control-group { display: flex; align-items: center; gap: 8px; padding: 3px 10px; background: white; border-radius: 5px; border: 1px solid #ddd; }
+
+        .info-section {
+            padding: 12px 20px;
+            background: #ecf0f1;
+            border-bottom: 1px solid #bdc3c7;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            font-size: 13px;
+        }
+
+        .info-item { display: flex; align-items: center; gap: 6px; }
+        .info-item strong { color: #2c3e50; }
+
+        .panel {
+            padding: 15px 20px;
+            background: #fafafa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .panel-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 10px; }
+        .field { display: flex; flex-direction: column; gap: 4px; min-width: 150px; flex: 1; }
+        .field label { font-weight: bold; color: #2c3e50; font-size: 12px; }
+        .field select, .field input, .field textarea { padding: 8px; border: 2px solid #ddd; border-radius: 5px; font-size: 13px; font-weight: bold; }
+        .field select:focus, .field input:focus, .field textarea:focus { outline: none; border-color: #3498db; }
+        .field textarea { resize: vertical; min-height: 60px; }
+        .help-text { font-size: 11px; color: #666; margin-top: 3px; font-style: italic; font-weight: normal; }
+
+        .table-section { padding: 15px; max-height: 600px; overflow: auto; }
+        .data-table-wrapper { overflow: auto; max-height: 600px; border: 1px solid #ddd; border-radius: 5px; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: auto; }
+        .data-table thead { position: sticky; top: 0; z-index: 10; }
+        .data-table th { background: #34495e; color: white; padding: 10px; text-align: right; border: 1px solid #2c3e50; cursor: pointer; user-select: none; white-space: nowrap; font-weight: bold; position: relative; min-width: 60px; }
+        .data-table th:hover { background: #2c3e50; }
+        .data-table th.sorted-asc::after { content: ' ▲'; color: #2ecc71; }
+        .data-table th.sorted-desc::after { content: ' ▼'; color: #e74c3c; }
+        .data-table td { padding: 8px 10px; border: 1px solid #e0e0e0; text-align: right; font-weight: bold; word-break: break-word; vertical-align: top; }
+        .data-table tr:nth-child(even) { background: #f8f9fa; }
+        .data-table tr:hover { background: #e8f4f8; }
+        .row-number { background: #ecf0f1 !important; color: #2c3e50; font-weight: bold; text-align: center; position: sticky; right: 0; z-index: 5; min-width: 50px; }
+        .row_number-header { background: #2c3e50 !important; color: white; position: sticky; right: 0; z-index: 11; }
+
+        .status-bar { background: #34495e; color: white; padding: 10px 20px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+        .status-bar.success { background: #27ae60; }
+        .status-bar.error { background: #e74c3c; }
+        .status-bar.warning { background: #f39c12; }
+        .status-bar.info { background: #3498db; }
+
+        .empty-state { text-align: center; padding: 50px 20px; color: #7f8c8d; }
+        .empty-state .icon { font-size: 70px; margin-bottom: 15px; }
+
+        .official-footer {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white; padding: 20px 30px; text-align: center; border-top: 4px solid #f0f4f8;
+        }
+        .footer-content { max-width: 1200px; margin: 0 auto; }
+        .footer-developer { font-size: 15px; font-weight: bold; margin-bottom: 8px; color: #ffffff; }
+        .footer-developer .title { color: #ffd700; font-size: 13px; margin-right: 8px; }
+        .footer-rights { font-size: 13px; color: #e0e0e0; margin-top: 5px; }
+        .footer-rights .year { color: #ffd700; font-weight: bold; }
+        .footer-divider { width: 80px; height: 2px; background: #ffd700; margin: 10px auto; border-radius: 2px; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-content h3 { margin-bottom: 15px; color: #2c3e50; text-align: center; }
+        .modal-content p { margin-bottom: 20px; color: #555; line-height: 1.6; text-align: right; }
+        .modal-content .btn { margin: 5px; }
+
+        .stats-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 22px; font-weight: bold; display: block; }
+        .stat-label { font-size: 11px; opacity: 0.9; margin-top: 3px; }
+
+        .duplicate-group {
+            background: white;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 2px solid #ffc107;
+        }
+
+        .duplicate-group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e0e0e0;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .duplicate-group-name { font-weight: bold; color: #dc3545; font-size: 14px; }
+        .duplicate-badge { background: #dc3545; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; margin-right: 5px; }
+
+        .duplicate-entries { display: flex; flex-direction: column; gap: 5px; }
+        .duplicate-entry {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 12px; background: #fafafa;
+            border-radius: 4px; border: 1px solid #e0e0e0;
+        }
+        .duplicate-entry.kept { border-right: 4px solid #28a745; background: #d4edda; }
+        .duplicate-entry.to-delete { border-right: 4px solid #dc3545; background: #f8d7da; }
+        .entry-checkbox { width: 20px; height: 20px; cursor: pointer; }
+        .entry-info { flex: 1; display: flex; flex-direction: column; gap: 3px; font-size: 12px; }
+        .entry-row-number { background: #2c3e50; color: white; padding: 2px 8px; border-radius: 3px; font-size: 10px; display: inline-block; width: fit-content; }
+        .entry-name { font-weight: bold; color: #2c3e50; }
+        .entry-details { color: #666; font-size: 11px; }
+        .entry-status { padding: 3px 8px; border-radius: 3px; font-size: 10px; font-weight: bold; }
+        .status-kept { background: #28a745; color: white; }
+        .status-delete { background: #dc3545; color: white; }
+
+        .password-input-group { display: flex; gap: 10px; margin: 20px 0; }
+        .password-input-group input { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; text-align: center; letter-spacing: 2px; }
+        .password-input-group input:focus { outline: none; border-color: #dc3545; }
+        .password-error { color: #dc3545; font-size: 12px; margin-top: 5px; display: none; text-align: center; }
+        .permission-level { background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0; font-size: 12px; text-align: right; border-right: 3px solid #ffc107; }
+        .password-modal-content { max-width: 450px; }
+
+        .column-info { background: #fff3cd; padding: 10px; border-radius: 6px; border-right: 3px solid #ffc107; margin-bottom: 10px; font-size: 12px; }
+        .value-tag { background: #3498db; color: white; padding: 5px 10px; border-radius: 4px; font-size: 11px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+        .multi-values-input { width: 100%; min-height: 80px; padding: 8px; border: 2px solid #ddd; border-radius: 5px; font-size: 13px; font-weight: bold; resize: vertical; }
+        .highlight-match { background: yellow; font-weight: bold; }
+        .sort-item, .filter-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: white; border-radius: 6px; border: 1px solid #e0e0e0; margin-bottom: 6px; flex-wrap: wrap; }
+        .sort-item { border-right: 4px solid #27ae60; }
+        .filter-item { border-right: 4px solid #e74c3c; }
+        .item-badge { background: #3498db; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; }
+        .item-remove { background: #e74c3c; color: white; border: none; padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: auto; }
+
+        /* أنماط مرادفات المواد الدراسية والتصفية الذكية */
+        .subject-helper-box {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .subject-picker-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .subject-picker-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #1e3c72;
+            white-space: nowrap;
+        }
+        .subject-select {
+            flex: 1;
+            min-width: 220px;
+            padding: 6px 10px;
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #1e3c72;
+            background: #ffffff;
+            cursor: pointer;
+        }
+        .subject-select:focus {
+            outline: none;
+            border-color: #1e3c72;
+            box-shadow: 0 0 0 2px rgba(30,60,114,0.15);
+        }
+        .quick-subject-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+        }
+        .subject-chip {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #2c3e50;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .subject-chip:hover {
+            background: #3498db;
+            color: #ffffff;
+            border-color: #2980b9;
+            transform: translateY(-1px);
+        }
+        .subject-chip.active {
+            background: #1e3c72;
+            color: #ffffff;
+            border-color: #1e3c72;
+        }
+        .btn-subject-action {
+            background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-subject-action:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(142, 68, 173, 0.3);
+        }
+        .btn-subject-clear {
+            background: #95a5a6;
+        }
+        .subject-suggestion-banner {
+            background: #eef2ff;
+            border: 1px dashed #6366f1;
+            border-radius: 6px;
+            padding: 6px 10px;
+            margin-top: 5px;
+            font-size: 11px;
+            color: #3730a3;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .subject-suggestion-btn {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 3px 9px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .subject-suggestion-btn:hover {
+            background: #3730a3;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-3px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* User info and navigation header bar */
+        .user-info-bar {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 10px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            max-width: 1500px;
+            margin-left: auto;
+            margin-right: auto;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .nav-controls-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 7px 14px;
+            border-radius: 7px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            line-height: 1.2;
+            color: #ffffff;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            filter: grayscale(80%);
+        }
+
+        .nav-btn-home { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .nav-btn-prev { background: linear-gradient(135deg, #64748b, #475569); }
+        .nav-btn-next { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+        .nav-btn-logout { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+        .role-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        .role-admin { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .role-group1 { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .role-group2 { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .role-group3 { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+
+        @media (max-width: 768px) {
+            .official-header { flex-direction: column; gap: 15px; min-height: auto; }
+            .header-section-right, .header-section-left { justify-content: center; text-align: center; padding: 0; }
+            .header-logo-center { position: static; transform: none; order: -1; }
+            .toolbar { justify-content: center; }
+            .field { min-width: 100%; }
+        }
+    </style>
+<body>
+    <!-- User info and navigation header bar -->
+    <div id="userInfoBar" class="user-info-bar">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="width: 38px; height: 38px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.25rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                👤
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 800; color: #1e293b; font-size: 1.1rem; line-height: 1.1;" id="currentUserName">admin</div>
+                <div style="font-size: 0.8rem; color: #64748b; font-weight: bold; line-height: 1.1; margin-top: 3px;" id="currentUserRoleBadge">أدمن</div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+            <button type="button" onclick="window.location.href='file_to_excel.html'" class="btn" style="background: #0284c7; color: white; padding: 0.45rem 1.1rem; font-size: 0.85rem; border-radius: 0.5rem; font-weight: bold;" title="فتح برنامج محول الملفات الشامل إلى Excel">🔄 تحويل الملفات لـ Excel</button>
+            <button type="button" onclick="showActivitiesFolderInfo()" class="btn" style="background: #0d9488; color: white; padding: 0.45rem 1.1rem; font-size: 0.85rem; border-radius: 0.5rem; font-weight: bold;" title="معرفة مكان وفتح ملف النشاطات المحفوظة في الحاسبة">📁 ملف النشاطات في الحاسبة</button>
+            <button type="button" onclick="window.location.href='index.html'" class="btn" style="background: #4f46e5; color: white; padding: 0.45rem 1.2rem; font-size: 0.9rem; border-radius: 0.5rem; font-weight: bold;">🏠 الرئيسية</button>
+            <button type="button" onclick="performLogout()" class="btn btn-danger" style="padding: 0.45rem 1.2rem; font-size: 0.9rem; border-radius: 0.5rem; font-weight: bold;">خروج</button>
+        </div>
+    </div>
+
+    <!-- الترويسة الأصلية -->
+    <div class="header-image-container">
+        <img src="header.png" alt="وزارة التربية - قسم الإعداد والتدريب" onerror="this.style.display='none'">
+    </div>
+
+    <div class="container">
+
+        <div class="toolbar">
+            <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls">
+            <button class="btn btn-open" onclick="document.getElementById('fileInput').click()">📂 فتح ملف Excel</button>
+            <button class="btn btn-save-excel" id="btnQuickExport" onclick="quickExportExcel()" disabled>💾 حفظ كملف Excel مباشر</button>
+            <button class="btn btn-purple" id="btnExport" onclick="showExportDialog()" disabled>⚙️ حفظ مع تحديد الأعمدة</button>
+            <button class="btn btn-info" id="btnDuplicates" onclick="openDuplicatesModal()" disabled>🔍 كشف التكرارات في الأسماء</button>
+            <button class="btn btn-reset" id="btnReset" onclick="resetData()" disabled>🔄 إعادة تعيين</button>
+            <button class="btn" style="background: #0284c7; color: white;" onclick="window.location.href='file_to_excel.html'" title="تحويل ملفات .file أو Word أو PDF أو CSV إلى Excel">🔄 تحويل صيغ الملفات إلى Excel</button>
+            <button class="btn btn-secondary" onclick="showActivitiesFolderInfo()" title="معرفة مكان وفتح المجلد الذي يتم فيه حفظ ملفات الإكسيل والنشاطات">📁 مكان حفظ الملفات في الحاسبة</button>
+        </div>
+
+        <div class="info-section" id="infoSection">
+            <div class="empty-state" style="width: 100%;">
+                <div class="icon">📋</div>
+                <h2>لم يتم تحميل أي ملف بعد</h2>
+                <p>اضغط على زر "فتح ملف Excel" لبدء العمل</p>
+            </div>
+        </div>
+
+        <div class="panel" id="sheetPanel" style="display: none;">
+            <div class="panel-title">إعدادات الملف</div>
+            <div class="panel-row">
+                <div class="field">
+                    <label>اختر الورقة:</label>
+                    <select id="sheetSelect" onchange="changeSheet()">
+                        <option value="">-- اختر ورقة --</option>
+                    </select>
+                </div>
+                <div class="column-info" id="columnsInfo">
+                    <strong>الأعمدة المكتشفة:</strong> <span id="columnsList"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" id="sortPanel" style="display: none;">
+            <div class="panel-title">الفرز المتعدد</div>
+            <div class="panel-row">
+                <div class="field">
+                    <label>العمود:</label>
+                    <select id="sortCol"><option value="">-- اختر --</option></select>
+                </div>
+                <div class="field">
+                    <label>الاتجاه:</label>
+                    <select id="sortOrder">
+                        <option value="asc">تصاعدي</option>
+                        <option value="desc">تنازلي</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>نوع البيانات:</label>
+                    <select id="sortType">
+                        <option value="auto">تلقائي</option>
+                        <option value="text">نص</option>
+                        <option value="number">رقم</option>
+                        <option value="date">تاريخ</option>
+                    </select>
+                </div>
+                <button class="btn btn-add-sort" onclick="addSortCondition()">إضافة شرط فرز</button>
+                <button class="btn btn-sort" onclick="applySorting()">تطبيق الفرز</button>
+                <button class="btn btn-secondary" onclick="clearSort()">مسح</button>
+            </div>
+            <div id="sortConditionsList"></div>
+        </div>
+
+        <div class="panel" id="filterPanel" style="display: none;">
+            <div class="panel-title">التصفية المتقدمة</div>
+            <div class="panel-row">
+                <div class="field">
+                    <label>العمود:</label>
+                    <select id="filterCol"><option value="">-- اختر --</option></select>
+                </div>
+                <div class="field">
+                    <label>الشرط:</label>
+                    <select id="filterCond">
+                        <option value="equals">يساوي (إحدى القيم)</option>
+                        <option value="contains">يحتوي على (إحدى القيم)</option>
+                        <option value="containsAll">يحتوي على (كل القيم)</option>
+                        <option value="notContains">لا يحتوي على</option>
+                        <option value="startsWith">يبدأ بـ</option>
+                        <option value="endsWith">ينتهي بـ</option>
+                        <option value="greater">أكبر من</option>
+                        <option value="less">أصغر من</option>
+                        <option value="isEmpty">فارغ</option>
+                        <option value="isNotEmpty">غير فارغ</option>
+                    </select>
+                </div>
+                <div class="field" style="flex: 2; min-width: 350px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 5px;">
+                        <label style="margin: 0;">القيم (افصل بفاصلة أو سطر جديد):</label>
+                        <div style="display: flex; gap: 5px; align-items: center;">
+                            <button type="button" class="btn-subject-action" onclick="expandCurrentFilterKeywords()" title="توسيع الكلمات المكتوبة لجميع مرادفات وتسميات المادة">
+                                🪄 توسيع المرادفات الذكي
+                            </button>
+                            <button type="button" class="btn-subject-action btn-subject-clear" onclick="clearFilterInputVal()" title="مسح حقل القيم">
+                                ✕ مسح
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- شريط اختيار وتضمين مرادفات المواد الدراسية -->
+                    <div class="subject-helper-box">
+                        <div class="subject-picker-row">
+                            <span class="subject-picker-label">📚 اختيار مادة لجلب كافة مرادفاتها:</span>
+                            <select id="subjectPresetSelect" class="subject-select" onchange="onSubjectSelectChange(this.value)">
+                                <option value="">-- اختر مادة دراسية لتحميل مرادفاتها دفعة واحدة --</option>
+                            </select>
+                        </div>
+                        
+                        <!-- أزرار المواد الشائعة بنقرة واحدة -->
+                        <div class="quick-subject-chips" id="quickSubjectChips">
+                            <span style="font-size: 11px; color: #555; font-weight: bold; align-self: center;">شائع:</span>
+                            <button type="button" class="subject-chip" onclick="selectSubjectQuick('arabic')">📖 عربي</button>
+                            <button type="button" class="subject-chip" onclick="selectSubjectQuick('english')">🔤 إنجليزي</button>
+                            <button type="button" class="subject-chip" onclick="selectSubjectQuick('math')">📐 رياضيات</button>
+                            <button type="button" class="subject-chip" onclick="selectSubjectQuick('islamic')">🕌 إسلامية</button>
+                            <button type="button" class="subject-chip" onclick="selectSubjectQuick('science')">🔬 علوم</button>
+                            <button type="button" class="subject-chip" onclick="selectSubjectQuick('biology')">🧬 أحياء</button>
+                            <button type="button" class="subject-chip" onclick="selectSubjectQuick('chemistry')">⚗️ كيمياء</button>
+                            <button type="button" class="subject-chip" onclick="selectSubjectQuick('physics')">🧲 فيزياء</button>
+                            <button type="button" class="subject-chip" onclick="selectSubjectQuick('social')">🌍 اجتماعيات</button>
+                            <button type="button" class="subject-chip" onclick="selectSubjectQuick('computer')">💻 حاسوب</button>
+                            <button type="button" class="subject-chip" onclick="selectSubjectQuick('art')">🎨 فنية</button>
+                            <button type="button" class="subject-chip" onclick="selectSubjectQuick('sports')">⚽ رياضة</button>
+                        </div>
+                    </div>
+
+                    <textarea id="filterVal" class="multi-values-input" placeholder="مثال: اكتب 'عربي' أو اختر مادة من القائمة أعلاه لتظهر جميع مرادفاتها دفعة واحدة" oninput="handleFilterValInput()"></textarea>
+
+                    <div id="subjectSuggestionBox" class="subject-suggestion-banner">
+                        <span id="subjectSuggestionText"></span>
+                        <button type="button" class="subject-suggestion-btn" id="subjectSuggestionBtn" onclick="applySuggestedSubject()">إدراج كافة المرادفات الآن</button>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; flex-wrap: wrap; gap: 8px;">
+                        <div class="help-text" style="margin: 0;">💡 عند اختيار أو كتابة أي مادة (مثل عربي) يتم جلب كافة مسمياتها دفعة واحدة</div>
+                        <label style="font-size: 11px; color: #1e3c72; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: bold; background: #eef2ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #c7d2fe;">
+                            <input type="checkbox" id="autoExpandSubjects" checked style="width: 14px; height: 14px; cursor: pointer;">
+                            تضمين تلقائي لكافة مرادفات المادة عند الفرز والتصفية
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-row">
+                <button class="btn btn-add-filter" onclick="addFilterCondition()">إضافة شرط</button>
+                <button class="btn btn-filter" onclick="applyFilters()">تطبيق التصفية</button>
+                <button class="btn btn-warning" onclick="showUniqueValues()">القيم الفريدة</button>
+                <button class="btn btn-secondary" onclick="clearFilters()">مسح</button>
+            </div>
+            <div id="filterConditionsList"></div>
+        </div>
+
+        <div class="table-section" id="tableSection">
+            <div class="empty-state">
+                <div class="icon">📊</div>
+                <h2>لا توجد بيانات لعرضها</h2>
+                <p>قم بتحميل ملف Excel لعرض بياناته هنا</p>
+            </div>
+        </div>
+
+        <div class="status-bar info" id="statusBar">
+            <span>جاهز للاستخدام</span>
+            <span id="rowCount"></span>
+        </div>
+
+    </div>
+
+    <!-- ==================== تذييل الصفحة (الفوتر) ==================== -->
+    <footer style="text-align: center; color: rgba(255,255,255,0.9); padding: 1.5rem 0; margin-top: 2rem; font-size: 0.95rem; direction: rtl;">
+        <p style="margin: 0; font-weight: bold;">تصميم وبرمجة م.م صفاء هادي عبد العالي - مدير قسم الاعداد والتدريب -تربية المثنى / جميع الحقوق محفوظة 2026</p>
+    </footer>
+
+    <!-- نافذة كشف التكرارات -->
+    <div class="modal" id="duplicatesModal">
+        <div class="modal-content" style="max-width: 900px;">
+            <h3>🔍 كشف التكرارات في الأسماء</h3>
+
+            <div id="duplicatesStats" class="stats-box"></div>
+
+            <p style="text-align: right;">
+                💡 يتم فحص التكرار بناءً على <strong>الاسم الأول + الثاني + الثالث (اللقب)</strong>.
+                اختر السجل الذي تريد <strong style="color: #28a745;">الإبقاء عليه</strong> وعلم الباقي للحذف.
+            </p>
+
+            <div style="display: flex; gap: 8px; justify-content: center; margin: 15px 0; flex-wrap: wrap;">
+                <button class="btn btn-success" onclick="keepOldestOfEachGroup()">الإبقاء على الأقدم</button>
+                <button class="btn btn-info" onclick="keepNewestOfEachGroup()">الإبقاء على الأحدث</button>
+                <button class="btn btn-secondary" onclick="keepMostCompleteOfEachGroup()">الإبقاء على الأكثر اكتمالاً</button>
+                <button class="btn btn-warning" onclick="selectAllDuplicates()">تحديد كل التكرارات</button>
+            </div>
+
+            <div id="duplicatesList" style="max-height: 500px; overflow-y: auto; margin-top: 15px;"></div>
+
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px; padding-top: 15px; border-top: 2px solid #e0e0e0;">
+                <button class="btn btn-danger" id="btnConfirmDelete" onclick="requestDeletePermission()">
+                    🗑️ حذف المحدد (<span id="deleteCount">0</span> سجل)
+                </button>
+                <button class="btn btn-secondary" onclick="closeDuplicatesModal()">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة طلب إذن الحذف -->
+    <div class="modal" id="permissionModal">
+        <div class="modal-content password-modal-content">
+            <h3 style="color: #dc3545;">🔒 طلب إذن الحذف</h3>
+            <p style="text-align: right;">⚠️ هذه العملية لا يمكن التراجع عنها. لحذف السجلات المحددة، يرجى إدخال كلمة المرور.</p>
+            <div class="permission-level">
+                <strong>مستوى الصلاحية:</strong> مدير النظام فقط
+            </div>
+            <div class="password-input-group">
+                <input type="password" id="deletePassword" placeholder="••••••" onkeyup="if(event.key==='Enter') verifyPassword()">
+            </div>
+            <div class="password-error" id="passwordError">❌ كلمة المرور غير صحيحة!</div>
+            <p style="font-size: 11px; color: #777; text-align: right; margin-top: 10px;">
+                💡 كلمة المرور الافتراضية: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">1234</code>
+            </p>
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="btn btn-danger" onclick="verifyPassword()">تأكيد الحذف</button>
+                <button class="btn btn-secondary" onclick="closePermissionModal()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة القيم الفريدة -->
+    <div class="modal" id="uniqueValuesModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <h3>القيم الفريدة في العمود</h3>
+            <div style="margin-bottom: 10px;">
+                <input type="text" id="uniqueSearchInput" placeholder="🔍 ابحث..." oninput="searchInUniqueValues()" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 14px; font-weight: bold;">
+            </div>
+            <div id="uniqueValuesList" style="text-align: right; max-height: 400px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 5px; padding: 10px; background: #fafafa;"></div>
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn btn-save-excel" onclick="closeUniqueValuesModal()">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة خيارات حفظ وتصدير ملف الإكسيل -->
+    <div class="modal" id="exportDialogModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #27ae60; padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: #1e3c72; display: flex; align-items: center; gap: 8px;">
+                    📊 خيارات حفظ وتصدير ملف الإكسيل
+                </h3>
+                <button type="button" onclick="closeExportDialog()" style="background: none; border: none; font-size: 22px; cursor: pointer; color: #888;">✕</button>
+            </div>
+
+            <!-- حقل اسم الملف الواضح -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: right;">
+                <label style="display: block; font-weight: bold; margin-bottom: 6px; color: #2c3e50;">
+                    📝 اسم ملف الإكسيل المراد حفظه:
+                </label>
+                <div style="display: flex; align-items: center; gap: 8px; direction: ltr;">
+                    <span style="background: #27ae60; color: white; padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 13px;">.xlsx</span>
+                    <input type="text" id="exportFileNameInput" placeholder="أدخل اسم الملف..." style="flex: 1; padding: 8px 12px; border: 2px solid #cbd5e1; border-radius: 5px; font-size: 14px; font-weight: bold; text-align: right; direction: rtl;">
+                </div>
+                <small style="color: #64748b; display: block; margin-top: 5px;">
+                    ✓ سيتم حفظ الملف كملف إكسيل (.xlsx) جاهز للفتح التلقائي في برنامج Microsoft Excel.
+                </small>
+            </div>
+
+            <!-- اختيار الأعمدة مع أزرار تحديد الكل -->
+            <div style="text-align: right; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <label style="font-weight: bold; color: #2c3e50;">📋 حدد الأعمدة المطلوب تصديرها في الملف:</label>
+                <div style="display: flex; gap: 6px;">
+                    <button type="button" class="btn btn-secondary" onclick="selectAllExportCols(true)" style="padding: 4px 10px; font-size: 12px;">تحديد الكل</button>
+                    <button type="button" class="btn btn-secondary" onclick="selectAllExportCols(false)" style="padding: 4px 10px; font-size: 12px;">إلغاء التحديد</button>
+                </div>
+            </div>
+
+            <div id="columnsSelectorList" style="max-height: 250px; overflow-y: auto; padding: 12px; text-align: right; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px;"></div>
+
+            <div style="text-align: center; margin-top: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-save-excel" onclick="confirmExport('excel')" style="padding: 10px 22px; font-size: 15px; font-weight: bold;">
+                    📗 حفظ كملف Excel (.xlsx)
+                </button>
+                <button type="button" class="btn btn-save-word" onclick="confirmExport('word')" style="padding: 10px 18px; font-size: 14px;">
+                    📘 حفظ كملف Word (.docx)
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="closeExportDialog()" style="padding: 10px 18px;">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة سؤال معرفة مكان حفظ الملف وتأكيد النجاح -->
+    <div class="modal" id="saveSuccessModal">
+        <div class="modal-content" style="max-width: 580px; text-align: right; padding: 25px; border: 2px solid #10b981; border-radius: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background: #d4edda; color: #28a745; font-size: 26px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">📁</div>
+                <div>
+                    <h3 style="color: #065f46; margin: 0 0 4px 0; font-size: 18px;">تم حفظ الملف داخل الحاسبة بنجاح!</h3>
+                    <div id="savedFileNameDisplay" style="font-weight: bold; color: #047857; font-size: 14px; word-break: break-all;"></div>
+                </div>
+            </div>
+
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; margin: 12px 0; text-align: right;">
+                <div style="color: #1e3a8a; font-size: 13px; font-weight: bold; margin-bottom: 6px;">📍 مكان حفظ الملف في الحاسبة (المسار الكامل):</div>
+                <div id="savedFilePathDisplay" style="color: #0f172a; background: #e2e8f0; padding: 8px 10px; border-radius: 6px; font-family: monospace, 'Cairo'; font-size: 12.5px; font-weight: bold; word-break: break-all; direction: ltr; text-align: left;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; flex-wrap: wrap; gap: 6px;">
+                    <span style="font-size: 11.5px; color: #475569; font-weight: bold;">💡 تم حفظ نسخة أيضاً في مجلد نشاطات البرنامج</span>
+                    <button type="button" onclick="copySavedFilePath()" style="background: #e0e7ff; color: #1e40af; border: 1px solid #a5b4fc; padding: 3px 10px; border-radius: 5px; font-size: 11.5px; font-weight: bold; cursor: pointer;">📋 نسخ المسار</button>
+                </div>
+            </div>
+
+            <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 10px 12px; margin-bottom: 15px;">
+                <div style="font-size: 14px; font-weight: bold; color: #92400e;">❓ سؤال: هل تريد فتح مكان حفظ الملف في الحاسبة لمعرفة مكانه، أو اختيار مكان آخر لحفظه؟</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                <button type="button" class="btn btn-save-excel" onclick="revealCurrentSavedFile()" style="margin: 0; justify-content: center; display: flex; align-items: center; gap: 6px; padding: 10px;">
+                    📂 نعم، افتح مكان الملف في الحاسبة
+                </button>
+                <button type="button" class="btn btn-info" id="btnOpenSavedFile" onclick="openCurrentSavedFile()" style="margin: 0; justify-content: center; display: flex; align-items: center; gap: 6px; padding: 10px;">
+                    📊 فتح وتشغيل الملف الآن
+                </button>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px;">
+                <button type="button" class="btn btn-purple" onclick="chooseCustomSaveLocation()" style="margin: 0; justify-content: center; display: flex; align-items: center; gap: 6px; padding: 10px;">
+                    📍 اختيار مكان آخر للحفظ (حفظ باسم...)
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="closeSaveSuccessModal()" style="margin: 0; padding: 10px 20px;">
+                    إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">تأكيد</h3>
+            <p id="modalMessage" style="white-space: pre-line;"></p>
+            <button class="btn btn-save-excel" id="modalConfirmBtn">نعم</button>
+            <button class="btn btn-reset" onclick="closeModal()">إلغاء</button>
+        </div>
+    </div>
+
+    <script>
+        const DELETE_PASSWORD = "1234";
+        const PASSWORD_HASH = btoa(DELETE_PASSWORD);
+
+        let workbook = null;
+        let currentData = [];
+        let originalData = [];
+        let currentSheet = null;
+        let columns = [];
+        let sortConditions = [];
+        let filterConditions = [];
+        let pendingAction = null;
+        let columnWidths = {};
+        let selectedExportColumns = [];
+        let allUniqueValues = [];
+        let filteredUniqueValues = [];
+        let originalFileName = '';
+        let lastSavedFilePath = '';
+
+        // متغيرات التكرارات
+        let duplicateGroups = [];
+        let rowsToDelete = new Set();
+        let nameColumnsConfig = { first: '', second: '', third: '' };
+        let pendingDeleteCallback = null;
+
+        document.getElementById('fileInput').addEventListener('change', handleFile);
+
+        function handleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            originalFileName = file.name;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    workbook = XLSX.read(data, { type: 'array' });
+                    const sheetSelect = document.getElementById('sheetSelect');
+                    sheetSelect.innerHTML = '<option value="">-- اختر ورقة --</option>';
+                    workbook.SheetNames.forEach(name => {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.textContent = name;
+                        sheetSelect.appendChild(option);
+                    });
+                    if (workbook.SheetNames.length > 0) {
+                        sheetSelect.value = workbook.SheetNames[0];
+                        loadSheet(workbook.SheetNames[0]);
+                    }
+                    document.getElementById('btnReset').disabled = false;
+                    document.getElementById('btnDuplicates').disabled = false;
+                    document.getElementById('btnExport').disabled = false;
+                    const btnQuick = document.getElementById('btnQuickExport');
+                    if (btnQuick) btnQuick.disabled = false;
+                    updateStatus(`تم تحميل الملف: ${file.name}`, 'success');
+                } catch (error) {
+                    showModal('خطأ', `فشل فتح الملف: ${error.message}`);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function loadSheet(sheetName) {
+            if (!workbook || !workbook.Sheets[sheetName]) return;
+            try {
+                currentSheet = sheetName;
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false });
+                if (jsonData.length === 0) { showModal('تنبيه', 'الورقة المختارة فارغة!'); return; }
+                currentData = JSON.parse(JSON.stringify(jsonData));
+                originalData = JSON.parse(JSON.stringify(jsonData));
+                columns = detectColumns(jsonData);
+                columnWidths = {};
+                updateColumnSelects();
+                displayData();
+                updateFileInfo();
+                clearSort();
+                clearFilters();
+                autoDetectNameColumns();
+                document.getElementById('sheetPanel').style.display = 'block';
+                document.getElementById('sortPanel').style.display = 'block';
+                document.getElementById('filterPanel').style.display = 'block';
+                updateStatus(`تم تحميل ${jsonData.length} صف و ${columns.length} عمود`, 'success');
+            } catch (error) {
+                showModal('خطأ', `فشل: ${error.message}`);
+            }
+        }
+
+        function autoDetectNameColumns() {
+            nameColumnsConfig = { first: '', second: '', third: '' };
+
+            columns.forEach(col => {
+                const name = col.name.toLowerCase().trim();
+                if (!nameColumnsConfig.first) {
+                    if (name.includes('الاسم') && (name.includes('الاول') || name.includes('الأول') || name.includes('1') || name.includes('first'))) {
+                        nameColumnsConfig.first = col.name;
+                    }
+                }
+                if (!nameColumnsConfig.second) {
+                    if (name.includes('الاسم') && (name.includes('الثاني') || name.includes('2') || name.includes('middle') || name.includes('الاب') || name.includes('الأب'))) {
+                        nameColumnsConfig.second = col.name;
+                    }
+                }
+                if (!nameColumnsConfig.third) {
+                    if (name.includes('الاسم') && (name.includes('الثالث') || name.includes('3') || name.includes('اللقب') || name.includes('العائلة') || name.includes('last'))) {
+                        nameColumnsConfig.third = col.name;
+                    } else if (name === 'اللقب' || name === 'الجد' || name === 'اسم العائلة') {
+                        nameColumnsConfig.third = col.name;
+                    }
+                }
+            });
+        }
+
+        function detectColumns(data) {
+            if (data.length === 0) return [];
+            const firstRow = data[0];
+            return Object.keys(firstRow).map(colName => {
+                const sample = data.slice(0, Math.min(50, data.length))
+                    .map(row => row[colName]).filter(v => v !== '' && v !== null && v !== undefined);
+                let dataType = 'text';
+                if (sample.length > 0) {
+                    if (sample.every(v => !isNaN(parseFloat(v)) && isFinite(v))) dataType = 'number';
+                    else if (sample.every(v => !isNaN(Date.parse(v)))) dataType = 'date';
+                }
+                const maxLength = Math.max(colName.length, ...data.slice(0, 100).map(row => String(row[colName] || '').length));
+                return { name: colName, type: dataType, maxLength: maxLength };
+            });
+        }
+
+        function updateColumnSelects() {
+            const sortCol = document.getElementById('sortCol');
+            const filterCol = document.getElementById('filterCol');
+            sortCol.innerHTML = '<option value="">-- اختر --</option>';
+            filterCol.innerHTML = '<option value="">-- اختر --</option>';
+            columns.forEach(col => {
+                sortCol.appendChild(new Option(`${col.name} (${getTypeLabel(col.type)})`, col.name));
+                filterCol.appendChild(new Option(`${col.name} (${getTypeLabel(col.type)})`, col.name));
+            });
+            document.getElementById('columnsList').textContent = columns.map(c => `${c.name} [${getTypeLabel(c.type)}]`).join(' • ');
+        }
+
+        function getTypeLabel(type) {
+            const labels = { 'text': 'نص', 'number': 'رقم', 'date': 'تاريخ', 'auto': 'تلقائي' };
+            return labels[type] || type;
+        }
+
+        function changeSheet() {
+            const sheetName = document.getElementById('sheetSelect').value;
+            if (sheetName) loadSheet(sheetName);
+        }
+
+        // ====== فتح نافذة كشف التكرارات ======
+        function openDuplicatesModal() {
+            if (currentData.length === 0) {
+                showModal('تنبيه', 'لا توجد بيانات للبحث فيها');
+                return;
+            }
+
+            // إذا لم يتم اكتشاف أعمدة الأسماء، اعرض واجهة التحديد
+            if (!nameColumnsConfig.first || !nameColumnsConfig.second || !nameColumnsConfig.third) {
+                showNameColumnSelector();
+            } else {
+                findDuplicates();
+            }
+        }
+
+        // ====== واجهة اختيار أعمدة الأسماء ======
+        function showNameColumnSelector() {
+            const colOptions = columns.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('');
+
+            const content = `
+                <div class="modal-content" style="max-width: 500px;">
+                    <h3>تحديد أعمدة الأسماء</h3>
+                    <p>لم نتمكن من اكتشاف أعمدة الأسماء تلقائياً. الرجاء تحديد الأعمدة يدوياً:</p>
+                    <div style="text-align: right; margin: 15px 0;">
+                        <div class="field" style="margin-bottom: 10px;">
+                            <label>عمود الاسم الأول:</label>
+                            <select id="nameColFirst" style="padding: 8px; border: 2px solid #ddd; border-radius: 5px;">
+                                <option value="">-- اختر --</option>
+                                ${colOptions}
+                            </select>
+                        </div>
+                        <div class="field" style="margin-bottom: 10px;">
+                            <label>عمود الاسم الثاني:</label>
+                            <select id="nameColSecond" style="padding: 8px; border: 2px solid #ddd; border-radius: 5px;">
+                                <option value="">-- اختر --</option>
+                                ${colOptions}
+                            </select>
+                        </div>
+                        <div class="field" style="margin-bottom: 10px;">
+                            <label>عمود الاسم الثالث (اللقب):</label>
+                            <select id="nameColThird" style="padding: 8px; border: 2px solid #ddd; border-radius: 5px;">
+                                <option value="">-- اختر --</option>
+                                ${colOptions}
+                            </select>
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <button class="btn btn-success" onclick="confirmNameColumns()">تأكيد وبدء البحث</button>
+                        <button class="btn btn-secondary" onclick="closeNameColumnSelector()">إلغاء</button>
+                    </div>
+                </div>
+            `;
+
+            // إنشاء نافذة مؤقتة
+            const tempModal = document.createElement('div');
+            tempModal.id = 'tempNameSelector';
+            tempModal.className = 'modal active';
+            tempModal.style.zIndex = '1001';
+            tempModal.innerHTML = content;
+            document.body.appendChild(tempModal);
+
+            // تعيين القيم المكتشفة تلقائياً
+            if (nameColumnsConfig.first) document.getElementById('nameColFirst').value = nameColumnsConfig.first;
+            if (nameColumnsConfig.second) document.getElementById('nameColSecond').value = nameColumnsConfig.second;
+            if (nameColumnsConfig.third) document.getElementById('nameColThird').value = nameColumnsConfig.third;
+        }
+
+        function confirmNameColumns() {
+            const first = document.getElementById('nameColFirst').value;
+            const second = document.getElementById('nameColSecond').value;
+            const third = document.getElementById('nameColThird').value;
+
+            if (!first || !second || !third) {
+                showModal('تنبيه', 'يجب تحديد الأعمدة الثلاثة');
+                return;
+            }
+
+            if (first === second || first === third || second === third) {
+                showModal('تنبيه', 'يجب اختيار أعمدة مختلفة');
+                return;
+            }
+
+            nameColumnsConfig.first = first;
+            nameColumnsConfig.second = second;
+            nameColumnsConfig.third = third;
+
+            closeNameColumnSelector();
+            findDuplicates();
+        }
+
+        function closeNameColumnSelector() {
+            const tempModal = document.getElementById('tempNameSelector');
+            if (tempModal) tempModal.remove();
+        }
+
+        // ====== البحث عن التكرارات ======
+        function findDuplicates() {
+            rowsToDelete.clear();
+            duplicateGroups = [];
+
+            // التحقق من الأعمدة
+            if (!nameColumnsConfig.third) {
+                showModal('خطأ', 'لم يتم تحديد عمود الاسم الثالث');
+                return;
+            }
+
+            // التحقق من وجود الأعمدة في البيانات
+            if (currentData.length > 0) {
+                const firstRow = currentData[0];
+                if (!(nameColumnsConfig.first in firstRow) ||
+                    !(nameColumnsConfig.second in firstRow) ||
+                    !(nameColumnsConfig.third in firstRow)) {
+                    showModal('خطأ', 'الأعمدة المحددة غير موجودة في البيانات');
+                    return;
+                }
+            }
+
+            // تجميع السجلات
+            const groups = {};
+
+            currentData.forEach((row, index) => {
+                const first = normalizeForCompare(String(row[nameColumnsConfig.first] || ''));
+                const second = normalizeForCompare(String(row[nameColumnsConfig.second] || ''));
+                const third = normalizeForCompare(String(row[nameColumnsConfig.third] || ''));
+
+                if (!first && !second && !third) return; // تجاهل الصفوف الفارغة
+
+                const key = `${first}|${second}|${third}`;
+                if (!groups[key]) {
+                    groups[key] = [];
+                }
+                groups[key].push({
+                    row: row,
+                    index: index,
+                    firstRaw: String(row[nameColumnsConfig.first] || '').trim(),
+                    secondRaw: String(row[nameColumnsConfig.second] || '').trim(),
+                    thirdRaw: String(row[nameColumnsConfig.third] || '').trim()
+                });
+            });
+
+            // الاحتفاظ فقط بالمجموعات المكررة
+            duplicateGroups = Object.entries(groups)
+                .filter(([key, items]) => items.length > 1)
+                .map(([key, items]) => ({
+                    key: key,
+                    name: `${items[0].firstRaw} ${items[0].secondRaw} ${items[0].thirdRaw}`.trim(),
+                    items: items
+                }));
+
+            // عرض النتائج
+            renderDuplicates();
+            document.getElementById('duplicatesModal').classList.add('active');
+
+            if (duplicateGroups.length === 0) {
+                updateStatus('لم يتم العثور على تكرارات', 'info');
+            } else {
+                updateStatus(`تم العثور على ${duplicateGroups.length} مجموعة مكررة`, 'warning');
+            }
+        }
+
+        function normalizeForCompare(text) {
+            if (!text) return '';
+            return String(text).toLowerCase()
+                .replace(/[\u064B-\u065F\u0670]/g, '')
+                .replace(/[أإآا]/g, 'ا')
+                .replace(/[ىي]/g, 'ي')
+                .replace(/ة/g, 'ه')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function renderDuplicates() {
+            // حساب الإحصائيات
+            const totalDuplicates = duplicateGroups.reduce((sum, g) => sum + g.items.length, 0);
+            const duplicateRecords = totalDuplicates - duplicateGroups.length;
+
+            document.getElementById('duplicatesStats').innerHTML = `
+                <div class="stat-item">
+                    <span class="stat-value">${duplicateGroups.length}</span>
+                    <span class="stat-label">مجموعة مكررة</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${totalDuplicates}</span>
+                    <span class="stat-label">إجمالي السجلات</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${duplicateRecords}</span>
+                    <span class="stat-label">قابل للحذف</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="selectedDeleteCount">${rowsToDelete.size}</span>
+                    <span class="stat-label">محدد للحذف</span>
+                </div>
+            `;
+
+            if (duplicateGroups.length === 0) {
+                document.getElementById('duplicatesList').innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">✅</div>
+                        <h2>لم يتم العثور على تكرارات</h2>
+                        <p>جميع الأسماء الثلاثية فريدة</p>
+                    </div>
+                `;
+                document.getElementById('btnConfirmDelete').disabled = true;
+                return;
+            }
+
+            let html = '';
+            duplicateGroups.forEach((group, groupIndex) => {
+                html += `
+                    <div class="duplicate-group">
+                        <div class="duplicate-group-header">
+                            <div>
+                                <span class="duplicate-group-name">${escapeHtml(group.name)}</span>
+                                <span class="duplicate-badge">${group.items.length} سجلات</span>
+                            </div>
+                            <div style="display: flex; gap: 5px;">
+                                <button class="btn btn-success" style="padding: 4px 10px; font-size: 11px;"
+                                        onclick="keepFirstInGroup(${groupIndex})">الإبقاء على الأول</button>
+                                <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;"
+                                        onclick="markAllInGroupForDelete(${groupIndex})">حذف الكل ماعدا الأول</button>
+                            </div>
+                        </div>
+                        <div class="duplicate-entries">
+                `;
+
+                group.items.forEach((item) => {
+                    const isMarkedForDelete = rowsToDelete.has(item.index);
+                    const entryClass = isMarkedForDelete ? 'to-delete' : 'kept';
+                    const statusClass = isMarkedForDelete ? 'status-delete' : 'status-kept';
+                    const statusText = isMarkedForDelete ? 'محدد للحذف' : 'محتفظ به';
+                    const fullName = `${item.firstRaw} ${item.secondRaw} ${item.thirdRaw}`;
+
+                    // جمع بعض التفاصيل الإضافية
+                    let details = [];
+                    columns.forEach(col => {
+                        if (col.name !== nameColumnsConfig.first &&
+                            col.name !== nameColumnsConfig.second &&
+                            col.name !== nameColumnsConfig.third &&
+                            item.row[col.name] &&
+                            String(item.row[col.name]).trim() !== '') {
+                            details.push(`${col.name}: ${item.row[col.name]}`);
+                        }
+                    });
+                    const detailsText = details.slice(0, 3).join(' | ');
+
+                    html += `
+                        <div class="duplicate-entry ${entryClass}">
+                            <input type="checkbox" class="entry-checkbox"
+                                   ${isMarkedForDelete ? 'checked' : ''}
+                                   onchange="toggleRowForDeletion(${item.index}, this.checked)">
+                            <div class="entry-info">
+                                <span class="entry-row-number">صف #${item.index + 1}</span>
+                                <span class="entry-name">${escapeHtml(fullName)}</span>
+                                ${detailsText ? `<span class="entry-details">${escapeHtml(detailsText)}</span>` : ''}
+                            </div>
+                            <span class="entry-status ${statusClass}">${statusText}</span>
+                        </div>
+                    `;
+                });
+
+                html += `</div></div>`;
+            });
+
+            document.getElementById('duplicatesList').innerHTML = html;
+            document.getElementById('deleteCount').textContent = rowsToDelete.size;
+            document.getElementById('btnConfirmDelete').disabled = rowsToDelete.size === 0;
+        }
+
+        function toggleRowForDeletion(rowIndex, isChecked) {
+            if (isChecked) rowsToDelete.add(rowIndex);
+            else rowsToDelete.delete(rowIndex);
+            renderDuplicates();
+        }
+
+        function keepFirstInGroup(groupIndex) {
+            const group = duplicateGroups[groupIndex];
+            // الإبقاء على الأول فقط (إزالة كل الباقين من قائمة الحذف)
+            for (let i = 1; i < group.items.length; i++) {
+                rowsToDelete.delete(group.items[i].index);
+            }
+            renderDuplicates();
+        }
+
+        function markAllInGroupForDelete(groupIndex) {
+            const group = duplicateGroups[groupIndex];
+            for (let i = 1; i < group.items.length; i++) {
+                rowsToDelete.add(group.items[i].index);
+            }
+            renderDuplicates();
+        }
+
+        function keepOldestOfEachGroup() {
+            rowsToDelete.clear();
+            duplicateGroups.forEach(group => {
+                for (let i = 1; i < group.items.length; i++) {
+                    rowsToDelete.add(group.items[i].index);
+                }
+            });
+            renderDuplicates();
+            updateStatus('تم تحديد الأحدث للحذف', 'info');
+        }
+
+        function keepNewestOfEachGroup() {
+            rowsToDelete.clear();
+            duplicateGroups.forEach(group => {
+                for (let i = 0; i < group.items.length - 1; i++) {
+                    rowsToDelete.add(group.items[i].index);
+                }
+            });
+            renderDuplicates();
+            updateStatus('تم تحديد الأقدم للحذف', 'info');
+        }
+
+        function keepMostCompleteOfEachGroup() {
+            rowsToDelete.clear();
+            duplicateGroups.forEach(group => {
+                const scored = group.items.map(item => {
+                    let score = 0;
+                    let filledFields = 0;
+                    columns.forEach(col => {
+                        const val = item.row[col.name];
+                        if (val && String(val).trim() !== '') {
+                            score += String(val).trim().length;
+                            filledFields++;
+                        }
+                    });
+                    return { ...item, score, filledFields };
+                }).sort((a, b) => b.filledFields - a.filledFields || b.score - a.score);
+
+                for (let i = 1; i < scored.length; i++) {
+                    rowsToDelete.add(scored[i].index);
+                }
+            });
+            renderDuplicates();
+            updateStatus('تم تحديد الأقل اكتمالاً للحذف', 'info');
+        }
+
+        function selectAllDuplicates() {
+            rowsToDelete.clear();
+            duplicateGroups.forEach(group => {
+                for (let i = 1; i < group.items.length; i++) {
+                    rowsToDelete.add(group.items[i].index);
+                }
+            });
+            renderDuplicates();
+        }
+
+        // ====== طلب إذن الحذف ======
+        function requestDeletePermission() {
+            if (rowsToDelete.size === 0) {
+                showModal('تنبيه', 'لم يتم تحديد أي سجل للحذف');
+                return;
+            }
+            document.getElementById('deletePassword').value = '';
+            document.getElementById('passwordError').style.display = 'none';
+            document.getElementById('permissionModal').classList.add('active');
+            setTimeout(() => document.getElementById('deletePassword').focus(), 300);
+        }
+
+        function verifyPassword() {
+            const inputPass = document.getElementById('deletePassword').value;
+
+            if (btoa(inputPass) === PASSWORD_HASH) {
+                closePermissionModal();
+                // تأكيد نهائي
+                pendingAction = 'deleteDuplicates';
+                showModal('⚠️ تأكيد الحذف النهائي',
+                    `هل أنت متأكد من حذف ${rowsToDelete.size} سجل مكرر؟\n\nعدد السجلات قبل: ${currentData.length}\nعدد السجلات بعد: ${currentData.length - rowsToDelete.size}\n\nهذه العملية لا يمكن التراجع عنها.`);
+            } else {
+                document.getElementById('passwordError').style.display = 'block';
+                document.getElementById('deletePassword').value = '';
+                document.getElementById('deletePassword').focus();
+            }
+        }
+
+        function closePermissionModal() {
+            document.getElementById('permissionModal').classList.remove('active');
+        }
+
+        function executeDeleteDuplicates() {
+            const deleteCount = rowsToDelete.size;
+            if (deleteCount === 0) return;
+
+            // ترتيب المؤشرات تنازلياً لتجنب مشاكل الفهرسة
+            const sortedIndices = Array.from(rowsToDelete).sort((a, b) => b - a);
+
+            // حذف السجلات
+            sortedIndices.forEach(idx => {
+                currentData.splice(idx, 1);
+            });
+
+            // إعادة بناء المصفوفة
+            currentData = currentData.map((row, idx) => {
+                const newRow = { ...row };
+                return newRow;
+            });
+
+            duplicateGroups = [];
+            rowsToDelete.clear();
+
+            closeDuplicatesModal();
+            displayData();
+            updateFileInfo();
+
+            updateStatus(`✓ تم حذف ${deleteCount} سجل مكرر بنجاح`, 'success');
+            showModal('✅ تمت العملية', `تم حذف ${deleteCount} سجل مكرر بنجاح.\n\nعدد السجلات الحالي: ${currentData.length}`);
+        }
+
+        function closeDuplicatesModal() {
+            document.getElementById('duplicatesModal').classList.remove('active');
+        }
+
+        // ====== قاموس مرادفات المواد والتخصصات الدراسية (وزارة التربية) ======
+        const SUBJECT_DEFINITIONS = {
+            arabic: {
+                name: "اللغة العربية",
+                icon: "📖",
+                keywords: [
+                    "عربي", "عربى", "العربي", "العربى", "لغة عربية", "اللغة العربية", "لغه عربيه", "اللغه العربيه",
+                    "قواعد", "قواعد عربي", "نحو", "بلاغة", "بلاغه", "ادب", "أدب", "ادب عربي", "أدب عربي",
+                    "قراءة", "قراءه", "نصوص", "املاء", "إملاء", "مطالعة", "مطالعه", "انشاء", "إنشاء"
+                ],
+                synonyms: [
+                    "لغة عربية", "اللغة العربية", "عربي", "العربي", "لغه عربيه", "اللغه العربيه",
+                    "قواعد عربي", "قواعد", "قواعد اللغة العربية", "أدب عربي", "ادب عربي", "أدب", "ادب",
+                    "بلاغة", "بلاغه", "نصوص", "قراءة", "قراءه", "إملاء", "املاء", "مطالعة", "مطالعه",
+                    "إنشاء", "انشاء", "نحو", "معلم عربي", "مدرس عربي", "معلم لغة عربية", "مدرس لغة عربية"
+                ]
+            },
+            english: {
+                name: "اللغة الإنجليزية",
+                icon: "🔤",
+                keywords: [
+                    "انجليزي", "انكليزي", "إنجليزي", "إنكليزي", "الانجليزي", "الانكليزي", "الإنجليزي", "الإنكليزي",
+                    "english", "انكلش", "انجلش", "لغة انكليزية", "لغة انجليزية", "لغة إنكليزية", "لغة إنجليزية",
+                    "انكليزية", "انجليزية", "إنكليزية", "إنجليزية", "انكليزيه", "انجليزيه"
+                ],
+                synonyms: [
+                    "لغة إنجليزية", "اللغة الإنجليزية", "لغة انكليزية", "اللغة الانكليزية",
+                    "إنجليزي", "انجليزي", "إنكليزي", "انكليزي", "الإنجليزي", "الانجليزي", "الإنكليزي", "الانكليزي",
+                    "English", "إنجليزية", "انجليزية", "إنكليزية", "انكليزية", "لغه انجليزيه", "لغه انكليزيه",
+                    "قواعد انكليزي", "قواعد انجليزي", "معلم انكليزي", "مدرس انكليزي", "معلم انجليزي", "مدرس انجليزي"
+                ]
+            },
+            math: {
+                name: "الرياضيات",
+                icon: "📐",
+                keywords: [
+                    "رياضيات", "الرياضيات", "جبر", "الجبر", "هندسة", "هندسه", "الهندسة", "تفاضل", "تكامل",
+                    "حساب", "احصاء", "إحصاء", "مثلثات"
+                ],
+                synonyms: [
+                    "رياضيات", "الرياضيات", "رياضيات عامة", "جبر", "الجبر", "هندسة", "الهندسة",
+                    "تفاضل وتكامل", "تفاضل", "تكامل", "حساب", "إحصاء", "احصاء", "مثلثات", "حساب مثلثات",
+                    "رياضيات تطبيقية", "معلم رياضيات", "مدرس رياضيات"
+                ]
+            },
+            islamic: {
+                name: "التربية الإسلامية والقرآن الكريم",
+                icon: "🕌",
+                keywords: [
+                    "اسلامية", "إسلامية", "اسلاميه", "إسلاميه", "قران", "قرآن", "دين", "تربية اسلامية",
+                    "تربية إسلامية", "تربيه اسلاميه", "القران", "القرآن", "تلاوة", "فقه", "عقيدة", "تفسير"
+                ],
+                synonyms: [
+                    "تربية إسلامية", "التربية الإسلامية", "تربية اسلامية", "التربية الاسلامية",
+                    "إسلامية", "اسلامية", "الإسلامية", "الاسلامية", "تربيه اسلاميه", "تربيه إسلاميه",
+                    "قرآن كريم", "القرآن الكريم", "قران كريم", "القران الكريم", "قرآن", "قران", "القرآن", "القران",
+                    "دين", "التربية الدينية", "تربية دينية", "عقيدة", "تلاوة", "تفسير", "فقه", "حديث",
+                    "معلم إسلامية", "مدرس إسلامية", "معلم اسلامية", "مدرس اسلامية"
+                ]
+            },
+            science: {
+                name: "العلوم العامة",
+                icon: "🔬",
+                keywords: ["علوم", "العلوم", "علوم عامة", "علوم عامه"],
+                synonyms: [
+                    "علوم", "العلوم", "علوم عامة", "العلوم العامة", "علوم عامه", "معلم علوم", "مدرس علوم"
+                ]
+            },
+            biology: {
+                name: "علم الأحياء",
+                icon: "🧬",
+                keywords: ["احياء", "أحياء", "الاحياء", "الأحياء", "بايولوجي", "بيولوجي", "علم الاحياء", "علم الأحياء", "biology"],
+                synonyms: [
+                    "أحياء", "احياء", "الأحياء", "الاحياء", "علم الأحياء", "علم الاحياء",
+                    "بايولوجي", "بيولوجي", "احياء عامة", "معلم أحياء", "مدرس أحياء", "معلم احياء", "مدرس احياء"
+                ]
+            },
+            chemistry: {
+                name: "الكيمياء",
+                icon: "⚗️",
+                keywords: ["كيمياء", "كيميا", "الكيمياء", "الكيميا", "chemistry"],
+                synonyms: [
+                    "كيمياء", "الكيمياء", "كيميا", "الكيميا", "كيمياء عامة", "معلم كيمياء", "مدرس كيمياء"
+                ]
+            },
+            physics: {
+                name: "الفيزياء",
+                icon: "🧲",
+                keywords: ["فيزياء", "فيزيا", "الفيزياء", "الفيزيا", "physics"],
+                synonyms: [
+                    "فيزياء", "الفيزياء", "فيزيا", "الفيزيا", "فيزياء عامة", "معلم فيزياء", "مدرس فيزياء"
+                ]
+            },
+            social: {
+                name: "الاجتماعيات",
+                icon: "🌍",
+                keywords: ["اجتماعيات", "الاجتماعيات", "دراسات اجتماعية", "مواد اجتماعية"],
+                synonyms: [
+                    "اجتماعيات", "الاجتماعيات", "دراسات اجتماعية", "مواد اجتماعية", "المواد الاجتماعية", "معلم اجتماعيات", "مدرس اجتماعيات"
+                ]
+            },
+            history: {
+                name: "التاريخ",
+                icon: "📜",
+                keywords: ["تاريخ", "التاريخ"],
+                synonyms: [
+                    "تاريخ", "التاريخ", "تاريخ عام", "معلم تاريخ", "مدرس تاريخ"
+                ]
+            },
+            geography: {
+                name: "الجغرافيا",
+                icon: "🗺️",
+                keywords: ["جغرافيا", "جغرافي", "الجغرافيا", "جغرافية"],
+                synonyms: [
+                    "جغرافيا", "الجغرافيا", "جغرافي", "جغرافية", "معلم جغرافيا", "مدرس جغرافيا"
+                ]
+            },
+            national: {
+                name: "التربية الوطنية",
+                icon: "⚖️",
+                keywords: ["وطنية", "وطنيه", "الوطنية", "الوطنيه", "تربية وطنية", "تربيه وطنيه", "حقوق انسان"],
+                synonyms: [
+                    "تربية وطنية", "التربية الوطنية", "وطنية", "الوطنية", "تربيه وطنيه", "حقوق إنسان", "حقوق انسان", "معلم وطنية"
+                ]
+            },
+            computer: {
+                name: "الحاسوب وتكنولوجيا المعلومات",
+                icon: "💻",
+                keywords: ["حاسوب", "الحاسوب", "حاسبات", "الحاسبات", "كمبيوتر", "معلوماتية", "تكنولوجيا", "تقنية معلومات", "مهارات رقمية", "it"],
+                synonyms: [
+                    "حاسوب", "الحاسوب", "حاسبات", "الحاسبات", "كمبيوتر", "الكمبيوتر",
+                    "تكنولوجيا المعلومات", "تقنية المعلومات", "مهارات رقمية", "معلوماتية", "IT", "معلم حاسوب", "مدرس حاسوب"
+                ]
+            },
+            art: {
+                name: "التربية الفنية",
+                icon: "🎨",
+                keywords: ["فنية", "فنيه", "الفنية", "الفنيه", "رسم", "الرسم", "فنون", "فنون تشكيلية", "تربية فنية", "تربيه فنيه"],
+                synonyms: [
+                    "تربية فنية", "التربية الفنية", "فنية", "الفنية", "تربيه فنيه", "التربيه الفنيه",
+                    "رسم", "الرسم", "فنون", "فنون تشكيلية", "خط وزخرفة", "معلم فنية", "مدرس فنية"
+                ]
+            },
+            sports: {
+                name: "التربية الرياضية والبدنية",
+                icon: "⚽",
+                keywords: ["رياضة", "رياضه", "الرياضة", "الرياضه", "تربية رياضية", "تربية بدنية", "تربيه رياضيه", "تربيه بدنيه", "بدنية", "بدنيه", "العاب", "ألعاب", "رياضة بدنية"],
+                synonyms: [
+                    "تربية رياضية", "التربية الرياضية", "تربية بدنية", "التربية البدنية", "تربيه رياضيه", "تربيه بدنيه",
+                    "رياضة", "الرياضة", "ألعاب", "العاب", "بدنية", "معلم رياضة", "مدرس رياضة"
+                ]
+            },
+            family: {
+                name: "التربية الأسرية / اقتصاد منزلي",
+                icon: "🏡",
+                keywords: ["أسرية", "اسرية", "اسريه", "اقتصاد منزلي", "تدبير منزلي", "فنون منزلية"],
+                synonyms: [
+                    "تربية أسرية", "التربية الأسرية", "تربية اسرية", "أسرية", "اسرية",
+                    "اقتصاد منزلي", "تدبير منزلي", "فنون منزلية", "معلمة أسرية"
+                ]
+            },
+            french: {
+                name: "اللغة الفرنسية",
+                icon: "🇫🇷",
+                keywords: ["فرنسي", "فرنسية", "فرنسيه", "الفرنسي", "الفرنسية", "لغة فرنسية", "french"],
+                synonyms: [
+                    "لغة فرنسية", "اللغة الفرنسية", "فرنسي", "الفرنسي", "فرنسية", "الفرنسية", "French", "مدرس فرنسي"
+                ]
+            },
+            kurdish: {
+                name: "اللغة الكردية",
+                icon: "☀️",
+                keywords: ["كردي", "كردية", "كرديه", "الكردي", "الكردية", "كوردي", "كوردية", "لغة كردية"],
+                synonyms: [
+                    "لغة كردية", "اللغة الكردية", "كردي", "الكردي", "كردية", "الكردية", "كوردي", "كوردية", "مدرس كردي"
+                ]
+            },
+            syriac: {
+                name: "اللغة السريانية والتركمانية",
+                icon: "🔠",
+                keywords: ["سرياني", "سريانية", "السريانية", "لغة سريانية", "تركماني", "تركمانية", "التركمانية", "لغة تركمانية"],
+                synonyms: [
+                    "لغة سريانية", "اللغة السريانية", "سرياني", "السرياني", "لغة تركمانية", "اللغة التركمانية", "تركماني", "التركماني"
+                ]
+            },
+            philosophy: {
+                name: "الفلسفة وعلم النفس والاجتماع",
+                icon: "🧠",
+                keywords: ["فلسفة", "فلسفه", "الفلسفة", "علم نفس", "علم النفس", "منطق", "المنطق", "علم اجتماع", "علم الاجتماع"],
+                synonyms: [
+                    "فلسفة", "الفلسفة", "علم نفس", "علم النفس", "منطق", "المنطق", "علم اجتماع", "علم الاجتماع", "مدرس فلسفة", "مدرس علم نفس"
+                ]
+            },
+            primary: {
+                name: "معلم صف / رياض أطفال",
+                icon: "👶",
+                keywords: ["معلم صف", "معلمة صف", "صفوف أولية", "صفوف اوليه", "رياض أطفال", "رياض اطفال", "روضة", "روضه", "تربية خاصة"],
+                synonyms: [
+                    "معلم صف", "معلمة صف", "صفوف أولية", "صفوف اوليه", "الصفوف الأولية",
+                    "رياض أطفال", "رياض اطفال", "روضة", "روضه", "معلمة روضة", "تربية خاصة", "التربية الخاصة"
+                ]
+            },
+            vocational: {
+                name: "التعليم المهني والتطبيقي",
+                icon: "⚙️",
+                keywords: ["مهني", "صناعي", "تجاري", "زراعي", "فنون تطبيقية", "تمريض", "كهرباء", "ميكانيك", "سيارات"],
+                synonyms: [
+                    "صناعي", "تجاري", "زراعي", "فنون تطبيقية", "تمريض", "كهرباء", "ميكانيك", "سيارات", "محاسبة", "إدارة", "مهني"
+                ]
+            }
+        };
+
+        let activeSuggestedSubject = null;
+
+        // تهيئة قائمة اختيار المواد الدراسية
+        function populateSubjectSelect() {
+            const sel = document.getElementById('subjectPresetSelect');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">-- اختر مادة دراسية لتحميل مرادفاتها دفعة واحدة --</option>';
+            for (const [key, def] of Object.entries(SUBJECT_DEFINITIONS)) {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = `${def.icon} ${def.name} (${def.synonyms.length} مرادف)`;
+                sel.appendChild(opt);
+            }
+        }
+
+        // عند اختيار مادة من القائمة المنسدلة
+        function onSubjectSelectChange(subjectKey) {
+            if (!subjectKey || !SUBJECT_DEFINITIONS[subjectKey]) return;
+            const def = SUBJECT_DEFINITIONS[subjectKey];
+            const filterVal = document.getElementById('filterVal');
+            
+            filterVal.value = def.synonyms.join(', ');
+            
+            const filterCond = document.getElementById('filterCond');
+            if (filterCond && filterCond.value !== 'equals' && filterCond.value !== 'contains') {
+                filterCond.value = 'equals';
+            }
+            
+            updateActiveSubjectChips(subjectKey);
+            hideSubjectSuggestion();
+            updateStatus(`✓ تم اختيار مادة (${def.name}) وإدراج ${def.synonyms.length} مرادف وتسمية شائعة دفعة واحدة`, 'info');
+        }
+
+        // اختيار سريع بنقرة واحدة عبر الأزرار
+        function selectSubjectQuick(subjectKey) {
+            const sel = document.getElementById('subjectPresetSelect');
+            if (sel) sel.value = subjectKey;
+            onSubjectSelectChange(subjectKey);
+        }
+
+        function updateActiveSubjectChips(activeKey) {
+            const chips = document.querySelectorAll('.subject-chip');
+            chips.forEach(chip => {
+                const onclickAttr = chip.getAttribute('onclick') || '';
+                if (onclickAttr.includes(`'${activeKey}'`)) {
+                    chip.classList.add('active');
+                } else {
+                    chip.classList.remove('active');
+                }
+            });
+        }
+
+        function resetSubjectPresetSelect() {
+            const sel = document.getElementById('subjectPresetSelect');
+            if (sel) sel.value = '';
+            const chips = document.querySelectorAll('.subject-chip');
+            chips.forEach(c => c.classList.remove('active'));
+            hideSubjectSuggestion();
+        }
+
+        function clearFilterInputVal() {
+            document.getElementById('filterVal').value = '';
+            resetSubjectPresetSelect();
+        }
+
+        // الكشف التلقائي عن المادة الدراسية من الكلمة
+        function detectSubjectFromKeyword(keyword) {
+            if (!keyword) return null;
+            const normKey = normalizeText(keyword);
+            if (!normKey || normKey.length < 2) return null;
+
+            for (const [subjKey, def] of Object.entries(SUBJECT_DEFINITIONS)) {
+                if (def.keywords.some(k => {
+                    const normK = normalizeText(k);
+                    return normKey === normK || normKey.includes(normK) || (normKey.length >= 3 && normK.includes(normKey));
+                })) {
+                    return subjKey;
+                }
+                if (def.synonyms.some(s => {
+                    const normS = normalizeText(s);
+                    return normKey === normS || (normKey.length >= 3 && normS.includes(normKey));
+                })) {
+                    return subjKey;
+                }
+            }
+            return null;
+        }
+
+        // توسيع مصفوفة القيم لتشمل كافة مرادفات المواد المعثور عليها
+        function expandValuesWithSubjectSynonyms(valuesArray) {
+            if (!valuesArray || valuesArray.length === 0) return [];
+            const resultSet = new Set(valuesArray);
+            
+            valuesArray.forEach(val => {
+                const detectedSubj = detectSubjectFromKeyword(val);
+                if (detectedSubj && SUBJECT_DEFINITIONS[detectedSubj]) {
+                    SUBJECT_DEFINITIONS[detectedSubj].synonyms.forEach(syn => resultSet.add(syn));
+                }
+            });
+            
+            return Array.from(resultSet);
+        }
+
+        // زر توسيع المرادفات الذكي في الواجهة
+        function expandCurrentFilterKeywords() {
+            const filterVal = document.getElementById('filterVal');
+            const currentText = filterVal.value.trim();
+            if (!currentText) {
+                showModal('تنبيه', 'الرجاء كتابة اسم مادة أو قيمة أولاً (مثل: عربي، انكليزي، رياضيات) لتوسيع مرادفاتها.');
+                return;
+            }
+            const currentValues = parseFilterValues(currentText);
+            const expanded = expandValuesWithSubjectSynonyms(currentValues);
+            
+            if (expanded.length > currentValues.length) {
+                filterVal.value = expanded.join(', ');
+                updateStatus(`✓ تم توسيع الكلمات بنجاح إلى ${expanded.length} مرادف وتسمية`, 'success');
+            } else {
+                showModal('معلومات', 'لم يتم العثور على مادة دراسية مطابقة في القاموس، أو أن كافة المرادفات مضافة بالفعل.');
+            }
+        }
+
+        // التفاعل أثناء الكتابة لاقتراح المادة فوراً
+        function handleFilterValInput() {
+            const filterVal = document.getElementById('filterVal');
+            const val = filterVal.value.trim();
+            if (!val) {
+                hideSubjectSuggestion();
+                return;
+            }
+            const values = parseFilterValues(val);
+            let foundSubject = null;
+            for (const v of values) {
+                const s = detectSubjectFromKeyword(v);
+                if (s) { foundSubject = s; break; }
+            }
+            if (foundSubject && SUBJECT_DEFINITIONS[foundSubject]) {
+                const def = SUBJECT_DEFINITIONS[foundSubject];
+                activeSuggestedSubject = foundSubject;
+                const box = document.getElementById('subjectSuggestionBox');
+                const text = document.getElementById('subjectSuggestionText');
+                if (box && text) {
+                    text.innerHTML = `✨ تم التعرف على مادة <strong>(${def.name})</strong>. يمكنك إدراج جميع مرادفاتها (${def.synonyms.length} مرادف) بنقرة واحدة:`;
+                    box.style.display = 'flex';
+                }
+            } else {
+                hideSubjectSuggestion();
+            }
+        }
+
+        function applySuggestedSubject() {
+            if (activeSuggestedSubject) {
+                selectSubjectQuick(activeSuggestedSubject);
+            }
+        }
+
+        function hideSubjectSuggestion() {
+            activeSuggestedSubject = null;
+            const box = document.getElementById('subjectSuggestionBox');
+            if (box) box.style.display = 'none';
+        }
+
+        // ====== باقي الدوال (الفرز، التصفية، العرض، الحفظ) ======
+        function parseFilterValues(input) {
+            if (!input) return [];
+            return input.split(/[,\n]/).map(v => v.trim()).filter(v => v.length > 0);
+        }
+
+        function normalizeText(text) {
+            if (text === null || text === undefined) return '';
+            return String(text).toLowerCase()
+                .replace(/[\u064B-\u065F\u0670]/g, '')
+                .replace(/[أإآا]/g, 'ا').replace(/[ىي]/g, 'ي').replace(/ة/g, 'ه')
+                .replace(/\s+/g, ' ').trim();
+        }
+
+        function similarity(s1, s2) {
+            const longer = s1.length > s2.length ? s1 : s2;
+            const shorter = s1.length > s2.length ? s2 : s1;
+            if (longer.length === 0) return 1.0;
+            return (longer.length - levenshteinDistance(longer, shorter)) / longer.length;
+        }
+
+        function levenshteinDistance(s1, s2) {
+            const costs = [];
+            for (let i = 0; i <= s1.length; i++) {
+                let lastValue = i;
+                for (let j = 0; j <= s2.length; j++) {
+                    if (i === 0) costs[j] = j;
+                    else if (j > 0) {
+                        let newValue = costs[j - 1];
+                        if (s1.charAt(i - 1) !== s2.charAt(j - 1)) newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                        costs[j - 1] = lastValue; lastValue = newValue;
+                    }
+                }
+                if (i > 0) costs[s2.length] = lastValue;
+            }
+            return costs[s2.length];
+        }
+
+        function checkMultiCondition(cellValue, condition, filterValues, useSmartMatch = true) {
+            const value = (cellValue === null || cellValue === undefined) ? '' : String(cellValue);
+            const normalizedValue = normalizeText(value);
+            const normalizedFilters = filterValues.map(v => normalizeText(v));
+            switch (condition) {
+                case 'equals': return normalizedFilters.some(f => useSmartMatch ? 
+                    (normalizedValue === f || similarity(normalizedValue, f) >= 0.8 || (f.length >= 3 && normalizedValue.includes(f)) || (normalizedValue.length >= 3 && f.includes(normalizedValue))) 
+                    : normalizedValue === f);
+                case 'contains': return normalizedFilters.some(f => useSmartMatch ? 
+                    (normalizedValue.includes(f) || f.includes(normalizedValue) || similarity(normalizedValue, f) >= 0.7) 
+                    : normalizedValue.includes(f));
+                case 'containsAll': return normalizedFilters.every(f => useSmartMatch ? (normalizedValue.includes(f) || similarity(normalizedValue, f) >= 0.7) : normalizedValue.includes(f));
+                case 'notContains': return !normalizedFilters.some(f => useSmartMatch ? (normalizedValue.includes(f) || similarity(normalizedValue, f) >= 0.7) : normalizedValue.includes(f));
+                case 'startsWith': return normalizedFilters.some(f => normalizedValue.startsWith(f));
+                case 'endsWith': return normalizedFilters.some(f => normalizedValue.endsWith(f));
+                case 'greater': return normalizedFilters.length > 0 && parseFloat(value) > parseFloat(normalizedFilters[0]);
+                case 'less': return normalizedFilters.length > 0 && parseFloat(value) < parseFloat(normalizedFilters[0]);
+                case 'isEmpty': return value === '' || value === null || value === undefined;
+                case 'isNotEmpty': return value !== '' && value !== null && value !== undefined;
+                default: return true;
+            }
+        }
+
+        function addFilterCondition() {
+            const col = document.getElementById('filterCol').value;
+            const cond = document.getElementById('filterCond').value;
+            const valText = document.getElementById('filterVal').value;
+            if (!col) { showModal('تنبيه', 'الرجاء اختيار عمود للتصفية'); return; }
+            let values = parseFilterValues(valText);
+            if (cond !== 'isEmpty' && cond !== 'isNotEmpty' && values.length === 0) { showModal('تنبيه', 'الرجاء إدخال قيمة أو أكثر'); return; }
+            
+            // التوسيع الذكي التلقائي للمواد الدراسية إذا كان الخيار مفعلاً
+            const autoExpand = document.getElementById('autoExpandSubjects')?.checked ?? true;
+            if (autoExpand && cond !== 'isEmpty' && cond !== 'isNotEmpty') {
+                values = expandValuesWithSubjectSynonyms(values);
+            }
+
+            filterConditions.push({ column: col, condition: cond, values: values, priority: filterConditions.length + 1 });
+            renderFilterConditions();
+            document.getElementById('filterVal').value = '';
+            resetSubjectPresetSelect();
+        }
+
+        function renderFilterConditions() {
+            const container = document.getElementById('filterConditionsList');
+            if (filterConditions.length === 0) { container.innerHTML = ''; return; }
+            const conditionNames = { 'equals': 'يساوي', 'contains': 'يحتوي على', 'containsAll': 'يحتوي كل القيم', 'notContains': 'لا يحتوي', 'startsWith': 'يبدأ بـ', 'endsWith': 'ينتهي بـ', 'greater': '>', 'less': '<', 'isEmpty': 'فارغ', 'isNotEmpty': 'غير فارغ' };
+            let html = '<div style="margin-top: 10px;"><strong>شروط التصفية المضافة:</strong></div>';
+            filterConditions.forEach((filter, index) => {
+                const valueText = (filter.condition === 'isEmpty' || filter.condition === 'isNotEmpty') ? '' : ` [${filter.values.length} قيمة]`;
+                const allValues = filter.values.length > 0 && filter.condition !== 'isEmpty' && filter.condition !== 'isNotEmpty' ? filter.values.join(' | ') : '';
+                html += `<div class="filter-item"><span class="priority">${filter.priority}</span><span class="item-badge">${escapeHtml(filter.column)}</span><span>${conditionNames[filter.condition] || filter.condition}${valueText}</span>${allValues ? `<span class="item-values" style="background:#e8f5e9;color:#2e7d32;padding:3px 8px;border-radius:4px;font-size:11px;max-width:400px;word-break:break-word;">${escapeHtml(allValues)}</span>` : ''}<button class="item-remove" onclick="removeFilterCondition(${index})">حذف</button></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function removeFilterCondition(index) { filterConditions.splice(index, 1); filterConditions.forEach((c, i) => c.priority = i + 1); renderFilterConditions(); }
+        function clearFilters() {
+            filterConditions = [];
+            renderFilterConditions();
+            document.getElementById('filterVal').value = '';
+            resetSubjectPresetSelect();
+        }
+
+        function applyFilters() {
+            // إذا لم يتم إضافة شرط بعد ولكن الحقول معبأة، يتم إضافتها تلقائياً ثم تطبيق التصفية
+            if (filterConditions.length === 0) {
+                const col = document.getElementById('filterCol').value;
+                const valText = document.getElementById('filterVal').value.trim();
+                const cond = document.getElementById('filterCond').value;
+                if (col && (valText || cond === 'isEmpty' || cond === 'isNotEmpty')) {
+                    addFilterCondition();
+                } else {
+                    currentData = JSON.parse(JSON.stringify(originalData));
+                    displayData();
+                    updateStatus('تم عرض جميع البيانات', 'info');
+                    return;
+                }
+            }
+            currentData = JSON.parse(JSON.stringify(originalData));
+            currentData = currentData.filter(row => {
+                return filterConditions.every(filter =>
+                    checkMultiCondition(row[filter.column], filter.condition, filter.values, true)
+                );
+            });
+            displayData();
+            updateStatus(`نتائج التصفية: ${currentData.length} صف`, 'success');
+        }
+
+        function addSortCondition() {
+            const col = document.getElementById('sortCol').value;
+            const order = document.getElementById('sortOrder').value;
+            const type = document.getElementById('sortType').value;
+            if (!col) { showModal('تنبيه', 'اختر عمود للفرز'); return; }
+            if (sortConditions.some(c => c.column === col)) { showModal('تنبيه', `العمود "${col}" مضاف بالفعل`); return; }
+            sortConditions.push({ column: col, order: order, type: type, priority: sortConditions.length + 1 });
+            renderSortConditions();
+        }
+
+        function renderSortConditions() {
+            const container = document.getElementById('sortConditionsList');
+            if (sortConditions.length === 0) { container.innerHTML = ''; return; }
+            const orderNames = { 'asc': 'تصاعدي', 'desc': 'تنازلي' };
+            const typeNames = { 'auto': 'تلقائي', 'text': 'نص', 'number': 'رقم', 'date': 'تاريخ' };
+            let html = '<div style="margin-top: 10px;"><strong>شروط الفرز:</strong></div>';
+            sortConditions.forEach((cond) => {
+                const idx = sortConditions.indexOf(cond);
+                html += `<div class="sort-item"><span class="priority">${cond.priority}</span><span class="item-badge">${escapeHtml(cond.column)}</span><span>${orderNames[cond.order]}</span><span class="item-badge" style="background: #9b59b6;">${typeNames[cond.type]}</span><button class="item-remove" onclick="removeSortCondition(${idx})">حذف</button></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function removeSortCondition(index) { sortConditions.splice(index, 1); sortConditions.forEach((c, i) => c.priority = i + 1); renderSortConditions(); }
+        function clearSort() { sortConditions = []; renderSortConditions(); }
+
+        function applySorting() {
+            if (sortConditions.length === 0) { showModal('تنبيه', 'أضف شرط فرز واحد على الأقل'); return; }
+            currentData.sort((a, b) => {
+                for (let condition of sortConditions) {
+                    const result = compareValues(a[condition.column], b[condition.column], condition.order, condition.type);
+                    if (result !== 0) return result;
+                }
+                return 0;
+            });
+            displayData();
+            updateStatus(`تم الفرز: ${sortConditions.map(c => '"' + c.column + '"').join(' ثم ')}`, 'success');
+        }
+
+        function compareValues(valA, valB, order, type) {
+            if ((valA === '' || valA === null || valA === undefined) && (valB === '' || valB === null || valB === undefined)) return 0;
+            if (valA === '' || valA === null || valA === undefined) return 1;
+            if (valB === '' || valB === null || valB === undefined) return -1;
+            let comparison = 0;
+            if (type === 'number' || (type === 'auto' && !isNaN(parseFloat(valA)) && !isNaN(parseFloat(valB)))) comparison = parseFloat(valA) - parseFloat(valB);
+            else if (type === 'date' || (type === 'auto' && !isNaN(Date.parse(valA)) && !isNaN(Date.parse(valB)))) comparison = new Date(valA) - new Date(valB);
+            else comparison = String(valA).localeCompare(String(valB), 'ar');
+            return order === 'asc' ? comparison : -comparison;
+        }
+
+        function getSortClass(columnName) {
+            const condition = sortConditions.find(c => c.column === columnName);
+            if (!condition) return '';
+            return condition.order === 'asc' ? 'sorted-asc' : 'sorted-desc';
+        }
+
+        function showUniqueValues() {
+            const col = document.getElementById('filterCol').value;
+            if (!col) { showModal('تنبيه', 'اختر عمود أولاً'); return; }
+            
+            let tempFilteredData = originalData;
+            if (filterConditions.length > 0) {
+                tempFilteredData = originalData.filter(row => {
+                    return filterConditions.every(filter =>
+                        checkMultiCondition(row[filter.column], filter.condition, filter.values, true)
+                    );
+                });
+            }
+
+            const valueCount = {};
+            tempFilteredData.forEach(row => {
+                const val = String(row[col] || '').trim();
+                if (val) valueCount[val] = (valueCount[val] || 0) + 1;
+            });
+            allUniqueValues = Object.keys(valueCount).map(v => ({ value: v, count: valueCount[v] })).sort((a, b) => a.value.localeCompare(b.value, 'ar'));
+            filteredUniqueValues = [...allUniqueValues];
+            document.getElementById('uniqueSearchInput').value = '';
+            renderUniqueValues();
+            document.getElementById('uniqueValuesModal').classList.add('active');
+        }
+
+        function searchInUniqueValues() {
+            const term = document.getElementById('uniqueSearchInput').value.toLowerCase();
+            filteredUniqueValues = term ? allUniqueValues.filter(i => i.value.toLowerCase().includes(term)) : [...allUniqueValues];
+            renderUniqueValues();
+        }
+
+        function renderUniqueValues() {
+            const div = document.getElementById('uniqueValuesList');
+            if (filteredUniqueValues.length === 0) {
+                div.innerHTML = '<p style="text-align: center; color: #777;">لا توجد نتائج</p>';
+                return;
+            }
+            let html = '<div style="display: flex; flex-direction: column; gap: 5px;">';
+            filteredUniqueValues.forEach(item => {
+                const safeVal = item.value.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                html += `<div onclick="addUniqueToFilter('${safeVal}')" class="value-tag" style="padding: 8px 12px; cursor: pointer; display: flex; justify-content: space-between;">${escapeHtml(item.value)} <span style="background: rgba(255,255,255,0.3); padding: 2px 6px; border-radius: 3px;">${item.count}</span></div>`;
+            });
+            html += '</div>';
+            div.innerHTML = html;
+        }
+
+        function addUniqueToFilter(value) {
+            const filterVal = document.getElementById('filterVal');
+            const unescaped = value.replace(/&quot;/g, '"').replace(/\\'/g, "'");
+            
+            // فحص ما إذا كانت القيمة تتبع مادة دراسية لتضمين كافة المرادفات تلقائياً
+            const autoExpand = document.getElementById('autoExpandSubjects')?.checked ?? true;
+            if (autoExpand) {
+                const detectedSubj = detectSubjectFromKeyword(unescaped);
+                if (detectedSubj && SUBJECT_DEFINITIONS[detectedSubj]) {
+                    const def = SUBJECT_DEFINITIONS[detectedSubj];
+                    filterVal.value = def.synonyms.join(', ');
+                    selectSubjectQuick(detectedSubj);
+                    updateStatus(`✓ تم اختيار (${unescaped}) وإدراج كافة مرادفات مادة ${def.name} تلقائياً (${def.synonyms.length} مرادف)`, 'success');
+                    closeUniqueValuesModal();
+                    return;
+                }
+            }
+
+            filterVal.value = filterVal.value.trim() ? filterVal.value + ', ' + unescaped : unescaped;
+            closeUniqueValuesModal();
+        }
+
+        function closeUniqueValuesModal() { document.getElementById('uniqueValuesModal').classList.remove('active'); }
+
+        function calculateColumnWidth(col) {
+            if (columnWidths[col.name]) return columnWidths[col.name];
+            const baseSize = 13;
+            return Math.min(Math.max(col.maxLength * baseSize * 0.7 + 30, 80), 400);
+        }
+
+        function displayData() {
+            const section = document.getElementById('tableSection');
+            if (currentData.length === 0) {
+                section.innerHTML = '<div class="empty-state"><div class="icon">📭</div><h2>لا توجد بيانات</h2></div>';
+                document.getElementById('rowCount').textContent = '0 صف';
+                return;
+            }
+            const showRowNumbers = true;
+            let html = '<div class="data-table-wrapper"><table class="data-table"><thead><tr>';
+            if (showRowNumbers) html += '<th class="row_number-header" style="width: 50px;">#</th>';
+            columns.forEach(col => {
+                const sortClass = getSortClass(col.name);
+                const width = calculateColumnWidth(col);
+                columnWidths[col.name] = width;
+                html += `<th class="${sortClass}" onclick="quickSort('${escapeHtml(col.name)}')" style="min-width: 60px; width: ${width}px;">${escapeHtml(col.name)} <span style="opacity:0.6">⇅</span></th>`;
+            });
+            html += '</tr></thead><tbody>';
+            currentData.forEach((row, idx) => {
+                html += `<tr>`;
+                if (showRowNumbers) html += `<td class="row-number">${idx + 1}</td>`;
+                columns.forEach(col => {
+                    const value = row[col.name] !== undefined ? row[col.name] : '';
+                    html += `<td title="${escapeHtml(String(value))}">${escapeHtml(String(value))}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+            section.innerHTML = html;
+            document.getElementById('rowCount').textContent = `${currentData.length} صف`;
+        }
+
+        function quickSort(col) {
+            currentData.sort((a, b) => String(a[col] || '').localeCompare(String(b[col] || ''), 'ar'));
+            displayData();
+            updateStatus(`تم الفرز حسب "${col}"`, 'success');
+        }
+
+        function showExportDialog() {
+            selectedExportColumns = columns.map(c => c.name);
+            const div = document.getElementById('columnsSelectorList');
+            let html = '';
+            columns.forEach((col, i) => {
+                html += `<div style="padding: 6px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 8px;">
+                    <label style="cursor: pointer; width: 100%; display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" checked onchange="toggleExportCol('${escapeHtml(col.name)}', this.checked)">
+                        <span style="font-weight: 500; color: #1e293b;">${escapeHtml(col.name)}</span>
+                    </label>
+                </div>`;
+            });
+            div.innerHTML = html;
+
+            // توليد اسم مقترح واضح ونظيف لملف الإكسيل مع امتداد .xlsx
+            const nameInput = document.getElementById('exportFileNameInput');
+            if (nameInput) {
+                const rawSheet = currentSheet || (originalFileName ? originalFileName.replace(/\.[^/.]+$/, '') : 'البيانات');
+                const safeSheet = rawSheet.replace(/[/\\?%*:|"<>]/g, '_').replace(/\s+/g, '_');
+                const now = new Date();
+                const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                nameInput.value = `فرز_${safeSheet}_${dateStr}.xlsx`;
+            }
+
+            document.getElementById('exportDialogModal').classList.add('active');
+        }
+
+        function selectAllExportCols(selectAll) {
+            const div = document.getElementById('columnsSelectorList');
+            if (!div) return;
+            const checkboxes = div.querySelectorAll('input[type="checkbox"]');
+            selectedExportColumns = [];
+            checkboxes.forEach((cb, idx) => {
+                cb.checked = selectAll;
+                if (selectAll && columns[idx]) {
+                    selectedExportColumns.push(columns[idx].name);
+                }
+            });
+        }
+
+        function toggleExportCol(name, checked) {
+            if (checked) {
+                if (!selectedExportColumns.includes(name)) selectedExportColumns.push(name);
+            } else {
+                selectedExportColumns = selectedExportColumns.filter(c => c !== name);
+            }
+        }
+
+        function closeExportDialog() {
+            document.getElementById('exportDialogModal').classList.remove('active');
+        }
+
+        function confirmExport(format) {
+            if (selectedExportColumns.length === 0) {
+                showModal('تنبيه', 'يرجى اختيار عمود واحد على الأقل لتصديره.');
+                return;
+            }
+            const orderedCols = columns.filter(c => selectedExportColumns.includes(c.name)).map(c => c.name);
+            const filteredData = currentData.map(row => {
+                const r = {};
+                orderedCols.forEach(c => r[c] = (row[c] !== undefined ? row[c] : ''));
+                return r;
+            });
+
+            const customName = document.getElementById('exportFileNameInput')?.value || '';
+            if (format === 'excel') {
+                saveExcel(filteredData, orderedCols, customName);
+            } else {
+                saveWord(filteredData, orderedCols, customName);
+            }
+            closeExportDialog();
+        }
+
+        function quickExportExcel() {
+            if (!currentData || currentData.length === 0) {
+                showModal('تنبيه', 'لا توجد بيانات متاحة للتصدير حالياً. يرجى فتح ملف Excel أولاً.');
+                return;
+            }
+            const allCols = columns.map(c => c.name);
+            saveExcel(currentData, allCols, '');
+        }
+
+        async function saveExcel(data, cols, customFileName) {
+            try {
+                if (!data || data.length === 0) {
+                    showModal('تنبيه', 'لا توجد بيانات متاحة لحفظها.');
+                    return;
+                }
+
+                // 1. تنظيف اسم الملف وضمان امتداد .xlsx حصراً ومنع أي امتداد .file أو غيره
+                let fileName = customFileName ? customFileName.trim() : '';
+                if (!fileName) {
+                    const rawSheet = currentSheet || (originalFileName ? originalFileName.replace(/\.[^/.]+$/, '') : 'البيانات');
+                    const safeSheet = rawSheet.replace(/[/\\?%*:|"<>]/g, '_').replace(/\s+/g, '_');
+                    const now = new Date();
+                    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                    const timeStr = `${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
+                    fileName = `فرز_${safeSheet}_${dateStr}_${timeStr}.xlsx`;
+                } else {
+                    fileName = fileName.replace(/[/\\?%*:|"<>]/g, '_');
+                    // إزالة أي امتدادات خاطئة مثل .file أو .tmp
+                    fileName = fileName.replace(/\.(file|tmp|bin|dat)$/i, '');
+                    if (!fileName.toLowerCase().endsWith('.xlsx')) {
+                        fileName = fileName.replace(/\.+$/, '') + '.xlsx';
+                    }
+                }
+
+                // 2. إنشاء ورقة العمل وملف الإكسيل عبر XLSX
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                const safeSheetTitle = (currentSheet || 'بيانات_مفروزة').replace(/[/\\?*:[\]]/g, '_').substring(0, 31);
+                XLSX.utils.book_append_sheet(wb, ws, safeSheetTitle);
+
+                // 3. كتابة ملف الإكسيل بصيغة Base64
+                const base64Data = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+                lastSavedFileName = fileName;
+                lastSavedBase64 = base64Data;
+
+                // 4. الحفظ التلقائي في المجلد الآمن على الجهاز (مجلد المستندات ومجلد نشاطات البرنامج)
+                let serverSavedPath = '';
+                let serverFolder = '';
+                let serverSuccess = false;
+                try {
+                    const res = await fetch('/api/save-file', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fileName: fileName, fileContent: base64Data })
+                    });
+                    if (res.ok) {
+                        const json = await res.json();
+                        if (json.success) {
+                            serverSavedPath = json.saved_path || json.path || '';
+                            serverFolder = json.folder || '';
+                            if (json.fileName) fileName = json.fileName;
+                            lastSavedFileName = fileName;
+                            lastSavedFilePath = serverSavedPath;
+                            serverSuccess = true;
+                        }
+                    }
+                } catch (err) {
+                    console.warn('الحفظ عبر الخادم غير متاح حالياً:', err);
+                }
+
+                // 5. إذا لم يكن الخادم المحلي متاحاً، يتم التنزيل عبر المتصفح
+                if (!serverSuccess) {
+                    XLSX.writeFile(wb, fileName);
+                }
+
+                // 6. عرض نافذة السؤال لمعرفة مكان الملف وتحديث شريط الحالة
+                showSaveSuccessModal(fileName, serverSavedPath, serverFolder);
+                updateStatus(`✓ تم حفظ ملف الإكسيل داخل الحاسبة بنجاح: ${fileName}`, 'success');
+
+            } catch (e) {
+                showModal('خطأ في الحفظ', `حدث خطأ أثناء حفظ ملف الإكسيل: ${e.message}`);
+            }
+        }
+
+        async function saveWord(data, cols, customFileName) {
+            try {
+                if (!data || data.length === 0) {
+                    showModal('تنبيه', 'لا توجد بيانات متاحة لحفظها.');
+                    return;
+                }
+
+                let fileName = customFileName ? customFileName.trim() : '';
+                if (!fileName) {
+                    const rawSheet = currentSheet || (originalFileName ? originalFileName.replace(/\.[^/.]+$/, '') : 'البيانات');
+                    const safeSheet = rawSheet.replace(/[/\\?%*:|"<>]/g, '_').replace(/\s+/g, '_');
+                    const now = new Date();
+                    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                    fileName = `فرز_${safeSheet}_${dateStr}.docx`;
+                } else {
+                    fileName = fileName.replace(/[/\\?%*:|"<>]/g, '_');
+                    fileName = fileName.replace(/\.(file|tmp|bin|dat)$/i, '');
+                    if (!fileName.toLowerCase().endsWith('.docx')) {
+                        fileName = fileName.replace(/\.+$/, '') + '.docx';
+                    }
+                }
+
+                const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, AlignmentType, WidthType } = docx;
+                const rows = [];
+                rows.push(new TableRow({
+                    tableHeader: true,
+                    children: cols.map(c => new TableCell({
+                        shading: { fill: "2c3e50" },
+                        children: [new Paragraph({ children: [new TextRun({ text: c, bold: true, color: "FFFFFF" })], alignment: AlignmentType.CENTER })]
+                    }))
+                }));
+
+                data.forEach((row, idx) => {
+                    rows.push(new TableRow({
+                        children: cols.map(c => new TableCell({
+                            shading: idx % 2 ? { fill: "F8F9FA" } : { fill: "FFFFFF" },
+                            children: [new Paragraph({ children: [new TextRun({ text: String(row[c] !== undefined ? row[c] : '') })], alignment: AlignmentType.RIGHT })]
+                        }))
+                    }));
+                });
+
+                const table = new Table({ rows, width: { size: 100, type: WidthType.PERCENTAGE } });
+                const doc = new Document({
+                    sections: [{
+                        children: [
+                            new Paragraph({ children: [new TextRun({ text: "وزارة التربية - المديرية العامة للتربية في المثنى", bold: true, size: 28, color: "1E3C72" })], alignment: AlignmentType.CENTER }),
+                            new Paragraph({ children: [new TextRun({ text: "قسم الاعداد والتدريب - شعبة التدريب", bold: true, size: 24, color: "2A5298" })], alignment: AlignmentType.CENTER, spacing: { after: 300 } }),
+                            new Paragraph({ children: [new TextRun({ text: "تقرير البيانات المفروزة", bold: true, size: 32, color: "1E3C72" })], alignment: AlignmentType.CENTER, spacing: { after: 400 } }),
+                            table,
+                            new Paragraph({ children: [new TextRun({ text: "\n— برمجة م.م صفاء هادي عبد العالي © 2026 —", size: 14, color: "999999" })], alignment: AlignmentType.CENTER, spacing: { before: 400 } })
+                        ]
+                    }]
+                });
+
+                const blob = await docx.Packer.toBlob(doc);
+
+                // حفظ نسخة على الخادم داخل الحاسبة
+                let serverSavedPath = '';
+                let serverFolder = '';
+                let serverSuccess = false;
+                try {
+                    const base64Data = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                    lastSavedFileName = fileName;
+                    lastSavedBase64 = base64Data;
+                    const res = await fetch('/api/save-file', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fileName: fileName, fileContent: base64Data })
+                    });
+                    if (res.ok) {
+                        const json = await res.json();
+                        if (json.success) {
+                            serverSavedPath = json.saved_path || json.path || '';
+                            serverFolder = json.folder || '';
+                            if (json.fileName) fileName = json.fileName;
+                            lastSavedFileName = fileName;
+                            lastSavedFilePath = serverSavedPath;
+                            serverSuccess = true;
+                        }
+                    }
+                } catch (e) {}
+
+                if (!serverSuccess) {
+                    downloadExcelBlob(blob, fileName);
+                }
+
+                showSaveSuccessModal(fileName, serverSavedPath, serverFolder);
+                updateStatus(`✓ تم حفظ: ${fileName}`, 'success');
+
+            } catch (e) {
+                showModal('خطأ في حفظ الوورد', e.message);
+            }
+        }
+
+        let lastSavedFileName = '';
+        let lastSavedBase64 = '';
+
+        function downloadViaServer(fileName) {
+            const a = document.createElement('a');
+            a.href = '/api/download-file?name=' + encodeURIComponent(fileName);
+            a.download = fileName;
+            a.setAttribute('download', fileName);
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                if (a.parentNode) document.body.removeChild(a);
+            }, 2000);
+        }
+
+        function downloadExcelBlob(blob, fileName) {
+            if (!fileName.toLowerCase().endsWith('.xlsx') && !fileName.toLowerCase().endsWith('.docx') && !fileName.toLowerCase().endsWith('.json')) {
+                fileName += '.xlsx';
+            }
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.setAttribute('download', fileName);
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                if (a.parentNode) document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 3000);
+        }
+
+        function showSaveSuccessModal(fileName, savedPath, folder) {
+            const modal = document.getElementById('saveSuccessModal');
+            if (!modal) {
+                alert(`✓ تم حفظ الملف بنجاح:\n${fileName}\nالمسار: ${savedPath || folder}`);
+                return;
+            }
+            const nameEl = document.getElementById('savedFileNameDisplay');
+            if (nameEl) nameEl.textContent = '📄 اسم الملف: ' + fileName;
+
+            const pathEl = document.getElementById('savedFilePathDisplay');
+            if (pathEl) {
+                pathEl.textContent = savedPath || folder || 'المستندات \\ تقارير_احصائيات_التدريب';
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeSaveSuccessModal() {
+            const modal = document.getElementById('saveSuccessModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function revealCurrentSavedFile() {
+            fetch('/api/reveal-file', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filePath: lastSavedFilePath, fileName: lastSavedFileName })
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (!d.success) openReportsFolder();
+            })
+            .catch(() => openReportsFolder());
+        }
+
+        function openCurrentSavedFile() {
+            const target = lastSavedFilePath;
+            if (target || lastSavedFileName) {
+                fetch('/api/open-file', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filePath: target, fileName: lastSavedFileName })
+                })
+                .then(r => r.json())
+                .then(d => {
+                    if (!d.success) openReportsFolder();
+                })
+                .catch(() => openReportsFolder());
+            } else {
+                openReportsFolder();
+            }
+        }
+
+        function chooseCustomSaveLocation() {
+            if (!lastSavedBase64) {
+                alert('يرجى حفظ ملف أولاً لاختيار مكان آخر لحفظه.');
+                return;
+            }
+            fetch('/api/save-file-as', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileName: lastSavedFileName || 'فرز_البيانات.xlsx', fileContent: lastSavedBase64 })
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d && d.success && d.path) {
+                    lastSavedFilePath = d.path;
+                    const pathEl = document.getElementById('savedFilePathDisplay');
+                    if (pathEl) pathEl.textContent = d.path;
+                    alert('✅ تم حفظ الملف في المكان الجديد بنجاح:\n' + d.path);
+                } else if (d && !d.cancelled && lastSavedFileName) {
+                    downloadViaServer(lastSavedFileName);
+                }
+            })
+            .catch(() => {
+                if (lastSavedFileName) downloadViaServer(lastSavedFileName);
+            });
+        }
+
+        function copySavedFilePath() {
+            const pathText = lastSavedFilePath || (document.getElementById('savedFilePathDisplay') ? document.getElementById('savedFilePathDisplay').textContent : '');
+            if (!pathText) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(pathText).then(() => alert('✅ تم نسخ مسار الملف:\n' + pathText));
+            } else {
+                prompt('انسخ مسار الملف:', pathText);
+            }
+        }
+
+        function showActivitiesFolderInfo() {
+            fetch('/api/activities-info')
+                .then(r => r.json())
+                .then(d => {
+                    if (d && d.success) {
+                        lastSavedFileName = 'ملف_النشاطات_المحفوظة.json';
+                        lastSavedFilePath = d.activitiesFile || d.docsActivitiesFile || d.folder || '';
+                        showSaveSuccessModal(
+                            'ملف النشاطات والتقارير المحفوظة في الحاسبة',
+                            (d.docsActivitiesFile || d.folder) + '\nومجلد البرنامج: ' + (d.activitiesFile || d.exeActivitiesFolder || ''),
+                            d.folder
+                        );
+                    } else {
+                        openReportsFolder();
+                    }
+                })
+                .catch(() => openReportsFolder());
+        }
+
+        function openReportsFolder() {
+            fetch('/api/open-reports-dir').catch(e => console.warn('Could not open folder:', e));
+        }
+
+        function resetData() {
+            pendingAction = 'reset';
+            showModal('تأكيد', 'إعادة تعيين البيانات وفلترة التكرارات؟');
+        }
+        function confirmReset() {
+            currentData = JSON.parse(JSON.stringify(originalData));
+            clearSort();
+            clearFilters();
+            displayData();
+            updateStatus('تم التعيين', 'warning');
+        }
+
+        function updateFileInfo() {
+            const fn = document.getElementById('fileInput').files[0]?.name || 'غير معروف';
+            document.getElementById('infoSection').innerHTML = `<div class="info-item">الملف: <strong>${escapeHtml(fn)}</strong></div><div class="info-item">الصفوف: <strong>${currentData.length}</strong></div><div class="info-item">الأعمدة: <strong>${columns.length}</strong></div>`;
+        }
+
+        function updateStatus(msg, type = 'info') {
+            const sb = document.getElementById('statusBar');
+            sb.className = 'status-bar ' + type;
+            sb.querySelector('span').textContent = msg;
+        }
+
+        function showModal(title, msg) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = msg;
+            document.getElementById('confirmModal').classList.add('active');
+            document.getElementById('modalConfirmBtn').onclick =
+                pendingAction === 'reset' ? confirmReset :
+                pendingAction === 'deleteDuplicates' ? executeDeleteDuplicates :
+                closeModal;
+        }
+
+        function closeModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+            pendingAction = null;
+        }
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'o') { e.preventDefault(); document.getElementById('fileInput').click(); }
+            if (e.key === 'Escape') {
+                closeModal();
+                closeUniqueValuesModal();
+                closeExportDialog();
+                closeSaveSuccessModal();
+                closeDuplicatesModal();
+                closePermissionModal();
+                closeNameColumnSelector();
+            }
+        });
+
+        // --- التحقق من الجلسة والصلاحيات والتنقل الموحد ---
+        let currentUser = null;
+
+        const ROLE_PERMISSIONS = {
+            'admin': ['home', 'statistics', 'trainees', 'bulkTrainees', 'leaders', 'total_report', 'correspondence', 'excel_sorter', 'dashboard'],
+            'group1': ['home', 'statistics', 'leaders', 'total_report', 'correspondence', 'excel_sorter'],
+            'group2': ['home', 'trainees', 'bulkTrainees', 'correspondence', 'excel_sorter'],
+            'group3': ['home', 'statistics', 'trainees', 'bulkTrainees', 'leaders', 'total_report', 'correspondence', 'excel_sorter']
+        };
+
+        const SECTIONS_CONFIG = [
+            { id: 'home', title: 'الصفحة الرئيسية', url: 'index.html?section=home' },
+            { id: 'statistics', title: 'الإحصائيات', url: 'index.html?section=statistics' },
+            { id: 'trainees', title: 'المتدربين', url: 'index.html?section=trainees' },
+            { id: 'bulkTrainees', title: 'إضافة مجموعة', url: 'index.html?section=bulkTrainees' },
+            { id: 'leaders', title: 'قادة التدريب', url: 'index.html?section=leaders' },
+            { id: 'total_report', title: 'التقرير الكلي', url: 'total_report.html' },
+            { id: 'correspondence', title: 'الوارد والصادر', url: 'index.html?section=correspondence' },
+            { id: 'excel_sorter', title: 'فرز Excel', url: 'excel_sorter.html' },
+            { id: 'dashboard', title: 'لوحة التحكم', url: 'index.html?section=dashboard' }
+        ];
+
+        function checkSession() {
+            const defaultAdminUser = { username: 'admin', role: 'admin', active: true, status: 'active', allowTotalReport: true };
+            let savedUser = sessionStorage.getItem('currentUser');
+            if (!savedUser) {
+                currentUser = defaultAdminUser;
+                try { sessionStorage.setItem('currentUser', JSON.stringify(currentUser)); } catch(e){}
+            } else {
+                try { currentUser = JSON.parse(savedUser); } catch(e) { currentUser = defaultAdminUser; }
+            }
+            if (!currentUser || !currentUser.username || currentUser.active === false) {
+                currentUser = defaultAdminUser;
+                try { sessionStorage.setItem('currentUser', JSON.stringify(currentUser)); } catch(e){}
+            }
+
+            const allowed = ROLE_PERMISSIONS[currentUser.role] || [];
+            if (!allowed.includes('excel_sorter')) {
+                currentUser.role = 'admin';
+                try { sessionStorage.setItem('currentUser', JSON.stringify(currentUser)); } catch(e){}
+            }
+
+            const unEl = document.getElementById('currentUserName');
+            if (unEl) unEl.textContent = currentUser.username;
+            const roleBadge = document.getElementById('currentUserRoleBadge');
+            if (roleBadge) {
+                roleBadge.textContent = getRoleName(currentUser.role);
+                roleBadge.className = 'role-badge role-' + currentUser.role;
+            }
+            updateNavState();
+        }
+
+        function updateNavState() {
+            if (!currentUser) return;
+            const allowed = ROLE_PERMISSIONS[currentUser.role] || [];
+            const curIdx = allowed.indexOf('excel_sorter');
+            const prevBtn = document.getElementById('btnNavPrev');
+            const nextBtn = document.getElementById('btnNavNext');
+            if (prevBtn) prevBtn.disabled = (curIdx <= 0);
+            if (nextBtn) nextBtn.disabled = (curIdx < 0 || curIdx >= allowed.length - 1);
+        }
+
+        function navGoHome() {
+        function navGoPrev() {
+            if (!currentUser) return;
+            const allowed = ROLE_PERMISSIONS[currentUser.role] || [];
+            const curIdx = allowed.indexOf('excel_sorter');
+            if (curIdx > 0) {
+                const prevId = allowed[curIdx - 1];
+                const sec = SECTIONS_CONFIG.find(s => s.id === prevId);
+                if (sec) window.location.href = sec.url;
+            }
+        }
+
+        function navGoNext() {
+            if (!currentUser) return;
+            const allowed = ROLE_PERMISSIONS[currentUser.role] || [];
+            const curIdx = allowed.indexOf('excel_sorter');
+            if (curIdx >= 0 && curIdx < allowed.length - 1) {
+                const nextId = allowed[curIdx + 1];
+                const sec = SECTIONS_CONFIG.find(s => s.id === nextId);
+                if (sec) window.location.href = sec.url;
+            }
+        }
+
+        function getRoleName(role) {
+            const names = {'admin':'أدمن','group1':'مجموعة 1','group2':'مجموعة 2','group3':'مجموعة 3 (شامل)'};
+            return names[role] || role;
+        }
+
+        function performLogout() {
+            if (confirm('هل أنت متأكد من الخروج وإغلاق التطبيق؟')) {
+                fetch('/api/close-app', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: 'close' }),
+                    keepalive: true
+                }).finally(() => {
+                    try { window.close(); } catch(e){}
+                });
+                setTimeout(() => {
+                    try { window.close(); } catch(e){}
+                }, 250);
+            }
+        }
+
+        // تهيئة قائمة المواد الدراسية فوراً وعند تحميل الصفحة والتحقق من الجلسة
+        window.addEventListener('DOMContentLoaded', function() {
+            checkSession();
+            populateSubjectSelect();
+        });
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            checkSession();
+            populateSubjectSelect();
+        }
+    </script>
+</body>
+</html>

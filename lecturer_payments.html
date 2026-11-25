@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>حساب أجور المحاضرين - نظام إحصائيات التدريب</title>
+<link rel="icon" type="image/x-icon" href="app_icon.ico">
+<script src="tailwind.min.js"></script>
+<script src="xlsx.full.min.js"></script>
+<style>
+* { font-family: 'Arial', 'Tahoma', sans-serif !important; }
+body { font-family: 'Arial', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #312e81 100%); min-height: 100vh; }
+.form-input { transition: all 0.2s ease; border: 2px solid #cbd5e1; border-radius: 0.5rem; padding: 0.5rem 0.75rem; background-color: #ffffff; font-size: 0.9rem; width: 100%; }
+.form-input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); }
+.form-label { display: block; font-size: 0.82rem; font-weight: 700; color: #1e293b; margin-bottom: 0.3rem; }
+.btn-primary { padding: 0.55rem 1.15rem; border-radius: 0.5rem; font-weight: 700; transition: all 0.2s ease; border: none; cursor: pointer; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 0.4rem; }
+.btn-primary:hover { transform: translateY(-1px); filter: brightness(1.06); }
+.header-image-container { width: 100%; max-width: 1320px; margin: 0 auto 1rem auto; border-radius: 0.75rem; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); border: 2px solid #1e293b; background: #ffffff; }
+.header-image-container img { width: 100%; height: auto; display: block; }
+.user-info-bar { background: white; border-radius: 0.75rem; padding: 0.7rem 1.1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+.pay-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+.pay-table th { background: #1e293b; color: #ffffff; padding: 0.65rem 0.45rem; border: 1px solid #334155; font-weight: 700; text-align: center; white-space: nowrap; }
+.pay-table td { padding: 0.45rem 0.4rem; border: 1px solid #cbd5e1; text-align: center; vertical-align: middle; background: #ffffff; }
+.pay-table tbody tr:nth-child(even) td { background: #f8fafc; }
+.pay-table tbody tr:hover td { background: #eef2ff; }
+.cell-input { width: 100%; border: 1px solid #cbd5e1; border-radius: 0.35rem; padding: 0.3rem 0.4rem; font-size: 0.83rem; background: #fff; text-align: center; }
+.cell-input:focus { outline: none; border-color: #4f46e5; background: #fefce8; }
+.cell-input-right { text-align: right; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.modal-card { background: white; border-radius: 1rem; max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.35); padding: 1.5rem; }
+.print-only { display: none; }
+@media print {
+    @page { size: A4 landscape; margin: 10mm; }
+    body { background: #ffffff !important; color: #000 !important; }
+    .no-print { display: none !important; }
+    .print-only { display: block !important; }
+    .print-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .print-table th, .print-table td { border: 1px solid #000; padding: 4px 5px; text-align: center; }
+    .print-table th { background: #e2e8f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: bold; }
+}
+</style>
+<script src="firebase_sync.js"></script>
+</head>
+<body class="p-3 md:p-5">
+
+<!-- شاشة تسجيل الدخول لحماية صفحة أجور المحاضرين -->
+<div id="lpAuthOverlay" class="no-print" style="position:fixed; inset:0; z-index:9999; background:linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #312e81 100%); display:flex; align-items:center; justify-content:center; padding:1rem;">
+    <div style="background:#ffffff; border-radius:1.25rem; max-width:420px; width:100%; padding:2rem; box-shadow:0 25px 50px rgba(0,0,0,0.45); border:2px solid #e2e8f0;">
+        <div style="text-align:center; margin-bottom:1.5rem;">
+            <div style="width:60px; height:60px; margin:0 auto 0.75rem auto; border-radius:9999px; background:#eef2ff; color:#4f46e5; display:flex; align-items:center; justify-content:center; font-size:1.75rem;">🔒</div>
+            <h2 style="font-size:1.25rem; font-weight:800; color:#1e293b; margin:0;">تسجيل الدخول - أجور المحاضرين</h2>
+            <p style="font-size:0.85rem; color:#64748b; margin:0.4rem 0 0 0;">يرجى إدخال اسم المستخدم وكلمة المرور للوصول إلى صفحة حساب أجور المحاضرين.</p>
+        </div>
+        <form id="lpAuthForm" onsubmit="return handleLpLogin(event)" autocomplete="off">
+            <div style="margin-bottom:1rem;">
+                <label class="form-label" for="lpAuthUser">اسم المستخدم</label>
+                <input type="text" id="lpAuthUser" class="form-input" dir="ltr" placeholder="Username" required autofocus>
+            </div>
+            <div style="margin-bottom:1rem;">
+                <label class="form-label" for="lpAuthPass">كلمة المرور</label>
+                <input type="password" id="lpAuthPass" class="form-input" dir="ltr" placeholder="Password" required>
+            </div>
+            <div id="lpAuthError" style="display:none; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; border-radius:0.5rem; padding:0.6rem 0.85rem; font-size:0.85rem; font-weight:700; margin-bottom:1rem; text-align:center;"></div>
+            <div style="display:flex; flex-direction:column; gap:0.6rem;">
+                <button type="submit" class="btn-primary bg-indigo-600 text-white" style="width:100%; justify-content:center; padding:0.7rem 1rem; font-size:0.95rem;">🔓 دخول</button>
+                <a href="index.html" class="btn-primary bg-slate-200 text-slate-700" style="width:100%; justify-content:center; text-decoration:none;">🏠 العودة للرئيسية</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="lpMainContainer" class="max-w-[1360px] mx-auto no-print" style="display:none;">
+    <!-- Header Banner -->
+    <div class="header-image-container">
+        <img src="header.png" alt="شعار المديرية" onerror="this.parentElement.style.display='none'">
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <div class="user-info-bar">
+        <div class="flex items-center gap-3 flex-wrap">
+            <a href="index.html" class="btn-primary bg-slate-800 text-white">🏠 الرئيسية</a>
+            <button type="button" onclick="window.location.href='index.html#leaders'" class="btn-primary bg-amber-600 text-white">👨‍🏫 قادة التدريب</button>
+            <a href="total_report.html" class="btn-primary bg-pink-600 text-white">📋 التقرير الكلي</a>
+            <span id="leadersSourceBadge" class="text-xs font-bold px-3 py-1.5 rounded-full bg-indigo-100 text-indigo-800">جاري تحميل بيانات قادة التدريب...</span>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" onclick="openRatesModal()" class="btn-primary bg-slate-600 text-white">⚙️ جدول الأسعار</button>
+            <button type="button" onclick="openSavedListsModal()" class="btn-primary bg-teal-700 text-white">📂 القوائم المحفوظة (<span id="savedListsCount">0</span>)</button>
+            <button type="button" onclick="saveCurrentListPrompt()" class="btn-primary bg-indigo-600 text-white">💾 حفظ القائمة</button>
+            <button type="button" onclick="exportToExcel()" class="btn-primary bg-emerald-600 text-white">📊 تصدير Excel</button>
+            <button type="button" onclick="exportToWord()" class="btn-primary bg-blue-600 text-white">📄 تصدير Word</button>
+            <button type="button" onclick="printOfficialList()" class="btn-primary bg-gray-800 text-white">🖨️ طباعة</button>
+            <button type="button" onclick="lockLecturerPaymentsPage()" class="btn-primary bg-rose-700 text-white" title="قفل صفحة أجور المحاضرين">🔒 قفل</button>
+        </div>
+    </div>
+
+    <!-- Title & Live Summary Cards -->
+    <div class="bg-white rounded-2xl shadow-xl p-5 mb-4">
+        <div class="flex flex-wrap justify-between items-center gap-4 border-b-2 border-indigo-100 pb-4 mb-4">
+            <div>
+                <h1 class="text-2xl font-extrabold text-slate-800">💰 حساب القيم المالية وأجور المحاضرين (قادة التدريب)</h1>
+                <p class="text-sm text-slate-600 mt-1">استخلاص تلقائي لبيانات المحاضرين من سجل قادة التدريب (اسم المحاضر، الشهادة، العنوان الوظيفي، الدرجة، موضوع المحاضرة) وحساب الأجور وفق جدول الصرفيات الرسمي.</p>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+                <label class="btn-primary bg-cyan-700 text-white cursor-pointer">
+                    📥 استيراد Excel
+                    <input type="file" id="importExcelInput" accept=".xlsx,.xltx,.xls" class="hidden" onchange="handleImportExcel(event)">
+                </label>
+                <button type="button" onclick="clearCurrentList()" class="btn-primary bg-rose-600 text-white">🗑️ تفريغ الجدول</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="rounded-xl p-4 bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow">
+                <div class="text-xs opacity-90 font-bold">👨‍🏫 عدد المحاضرين في القائمة</div>
+                <div class="text-3xl font-extrabold mt-1" id="statLecturersCount">0</div>
+            </div>
+            <div class="rounded-xl p-4 bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow">
+                <div class="text-xs opacity-90 font-bold">📚 مجموع المحاضرات</div>
+                <div class="text-3xl font-extrabold mt-1" id="statTotalLectures">0</div>
+            </div>
+            <div class="rounded-xl p-4 bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow">
+                <div class="text-xs opacity-90 font-bold">💵 المبلغ الإجمالي المستحق (دينار)</div>
+                <div class="text-3xl font-extrabold mt-1" id="statTotalAmount">0</div>
+            </div>
+            <div class="rounded-xl p-4 bg-slate-100 border border-slate-300 text-slate-800 flex flex-col justify-center">
+                <div class="text-xs font-bold text-slate-500">✍️ المبلغ كتابةً:</div>
+                <div class="text-sm font-bold text-indigo-900 mt-1" id="statAmountWords">صفر دينار عراقي</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 1: Extract from Training Leaders -->
+    <div class="bg-white rounded-2xl shadow-xl p-5 mb-4 border-r-4 border-amber-500">
+        <h2 class="text-lg font-extrabold text-slate-800 mb-3 flex items-center gap-2">⚡ استخلاص المحاضرين من معلومات قادة التدريب</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+            <div>
+                <label class="form-label">استخلاص حسب الدورة (من سجل قادة التدريب)</label>
+                <select id="extractCourseSelect" class="form-input">
+                    <option value="__all__">-- جميع الدورات في سجل قادة التدريب --</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">تصفية برقم كتاب التكليف (اختياري)</label>
+                <input type="text" id="extractBookFilter" class="form-input" placeholder="مثال: 1234">
+            </div>
+            <div class="flex gap-2">
+                <button type="button" onclick="extractFromLeadersData(false)" class="btn-primary bg-amber-600 text-white flex-1 justify-center">⚡ استخلاص وإضافة للجدول</button>
+                <button type="button" onclick="extractFromLeadersData(true)" class="btn-primary bg-slate-700 text-white" title="استبدال الجدول الحالي بالمستخلص">🔄 استبدال</button>
+            </div>
+            <div>
+                <label class="form-label">أو اختر قائداً تدريبياً لإضافته يدوياً (بحث بالاسم)</label>
+                <div class="flex gap-2">
+                    <input type="text" id="manualLeaderSearch" list="leadersCatalogDatalist" class="form-input" placeholder="اكتب اسم القائد التدريبي...">
+                    <datalist id="leadersCatalogDatalist"></datalist>
+                    <button type="button" onclick="addSelectedLeaderRow()" class="btn-primary bg-emerald-600 text-white whitespace-nowrap">➕ إضافة</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Course & Official Header Info -->
+    <div class="bg-white rounded-2xl shadow-xl p-5 mb-4">
+        <h2 class="text-lg font-extrabold text-slate-800 mb-3">📝 بيانات القائمة والدورة والتواقيع</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+                <label class="form-label">اسم الدورة</label>
+                <input type="text" id="courseName" class="form-input" placeholder="اسم الدورة التدريبية">
+            </div>
+            <div>
+                <label class="form-label">لشهر / السنة</label>
+                <input type="text" id="courseMonth" class="form-input" placeholder="مثال: 11 / 2026">
+            </div>
+            <div>
+                <label class="form-label">رقم كتاب التكليف</label>
+                <input type="text" id="bookNumber" class="form-input" placeholder="رقم الكتاب">
+            </div>
+            <div>
+                <label class="form-label">تاريخ كتاب التكليف</label>
+                <input type="text" id="bookDate" class="form-input" placeholder="YYYY/MM/DD">
+            </div>
+            <div>
+                <label class="form-label">الموظف المسؤول</label>
+                <input type="text" id="empResponsible" class="form-input" value="ايمان عباس هلول">
+            </div>
+            <div>
+                <label class="form-label">مسؤول الشعبة</label>
+                <input type="text" id="sectionHead" class="form-input" value="م.م حسين فالح حسن" placeholder="اسم مسؤول الشعبة">
+            </div>
+            <div>
+                <label class="form-label">مدير الدورة</label>
+                <input type="text" id="courseDirector" class="form-input" placeholder="اسم مدير الدورة">
+            </div>
+            <div>
+                <label class="form-label">مدير القسم</label>
+                <input type="text" id="deptDirector" class="form-input" value="م.م صفاء هادي عبد العالي">
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 3: Lecturers Financial Table -->
+    <div class="bg-white rounded-2xl shadow-xl p-5">
+        <div class="flex justify-between items-center flex-wrap gap-3 mb-3">
+            <h2 class="text-lg font-extrabold text-slate-800">📋 قائمة أجور المحاضرات</h2>
+            <button type="button" onclick="addEmptyRow()" class="btn-primary bg-blue-600 text-white">➕ إضافة صف فارغ</button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="pay-table">
+                <thead>
+                    <tr>
+                        <th style="width:38px;">ت</th>
+                        <th style="min-width:170px;">اسم المحاضر</th>
+                        <th style="min-width:110px;">الشهادة</th>
+                        <th style="min-width:130px;">العنوان الوظيفي</th>
+                        <th style="min-width:95px;">الدرجة الوظيفية</th>
+                        <th style="min-width:170px;">موضوع المحاضرة</th>
+                        <th style="min-width:105px;">من تاريخ</th>
+                        <th style="min-width:105px;">إلى تاريخ</th>
+                        <th style="width:95px;">عدد المحاضرات</th>
+                        <th style="width:95px;">سعر المحاضرة</th>
+                        <th style="width:110px;">المبلغ (دينار)</th>
+                        <th style="width:125px;">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentsTableBody"></tbody>
+                <tfoot>
+                    <tr class="bg-slate-100 font-extrabold text-slate-900">
+                        <td colspan="8" class="text-left px-4 py-2.5 bg-slate-200 font-extrabold">المجموع الكلي:</td>
+                        <td id="footTotalLectures" class="bg-amber-100 font-extrabold text-amber-900">0</td>
+                        <td class="bg-slate-200">-</td>
+                        <td id="footTotalAmount" class="bg-emerald-100 font-extrabold text-emerald-900">0</td>
+                        <td class="bg-slate-200"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Print-Only Official View -->
+<div class="print-only" id="printSection"></div>
+
+<!-- Weekly Schedule Modal (5 weeks x 6 days matching Excel Sheet1) -->
+<div id="scheduleModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+        <div class="flex justify-between items-center border-b pb-3 mb-4">
+            <h3 class="text-lg font-extrabold text-slate-800">📅 توزيع أيام إلقاء المحاضرات: <span id="schedLecturerName" class="text-indigo-700"></span></h3>
+            <button type="button" onclick="closeScheduleModal()" class="text-slate-500 hover:text-slate-800 text-xl font-bold">✕</button>
+        </div>
+        <p class="text-xs text-slate-600 mb-3">أدخل عدد المحاضرات لكل يوم (5 أسابيع × 6 أيام من السبت إلى الخميس)، وسيتم جمعها تلقائياً في مجموع المحاضرات وحساب المبلغ.</p>
+        <div class="overflow-x-auto">
+            <table class="pay-table">
+                <thead>
+                    <tr>
+                        <th>الأسبوع</th>
+                        <th>السبت</th>
+                        <th>الأحد</th>
+                        <th>الاثنين</th>
+                        <th>الثلاثاء</th>
+                        <th>الأربعاء</th>
+                        <th>الخميس</th>
+                        <th>مجموع الأسبوع</th>
+                    </tr>
+                </thead>
+                <tbody id="scheduleGridBody"></tbody>
+            </table>
+        </div>
+        <div class="flex justify-between items-center mt-4 pt-3 border-t">
+            <div class="text-sm font-bold text-slate-800">المجموع الكلي للمحاضرات: <span id="schedTotalDisplay" class="text-indigo-700 text-lg">0</span></div>
+            <div class="flex gap-2">
+                <button type="button" onclick="clearScheduleGrid()" class="btn-primary bg-rose-600 text-white">تصفير الأيام</button>
+                <button type="button" onclick="applyScheduleModal()" class="btn-primary bg-emerald-600 text-white">✅ اعتماد المجموع</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pricing Matrix Modal -->
+<div id="ratesModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+        <div class="flex justify-between items-center border-b pb-3 mb-4">
+            <h3 class="text-lg font-extrabold text-slate-800">⚙️ جدول أسعار المحاضرات الرسمي (دينار عراقي)</h3>
+            <button type="button" onclick="closeRatesModal()" class="text-slate-500 hover:text-slate-800 text-xl font-bold">✕</button>
+        </div>
+        <p class="text-xs text-slate-600 mb-3">الأسعار مطابقة لجدول الصرفيات في ملف Excel (`$Z$2:$AJ$11`). يمكنك تعديل أي سعر هنا وسيتم تطبيقه وحفظه.</p>
+        <div class="overflow-x-auto">
+            <table class="pay-table" id="ratesMatrixTable"></table>
+        </div>
+        <div class="flex justify-end gap-2 mt-4 pt-3 border-t">
+            <button type="button" onclick="resetDefaultRates()" class="btn-primary bg-amber-600 text-white">↺ استعادة الافتراضي</button>
+            <button type="button" onclick="saveRatesFromModal()" class="btn-primary bg-emerald-600 text-white">💾 حفظ وتطبيق الأسعار</button>
+        </div>
+    </div>
+</div>
+
+<!-- Saved Lists Modal -->
+<div id="savedListsModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+        <div class="flex justify-between items-center border-b pb-3 mb-4">
+            <h3 class="text-lg font-extrabold text-slate-800">📂 قوائم الصرفيات المحفوظة</h3>
+            <button type="button" onclick="closeSavedListsModal()" class="text-slate-500 hover:text-slate-800 text-xl font-bold">✕</button>
+        </div>
+        <div id="savedListsContainer" class="space-y-2"></div>
+    </div>
+</div>
+
+<script>
+// ==================== Built-in Qada Catalog (82 Training Leaders from Excel) ====================
+const BUILTIN_QADA_CATALOG = [
+    {"name": "احمد شاكر حسن", "specialty": "اداري", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "احمد کتاب لايذ", "specialty": "الادارة والاقتصاد قسم المحاسبة", "certificate": "ماجستير", "grade": "الرابعة"},
+    {"name": "احمد هاشم عبدالخضر", "specialty": "موظف شعبة تدريب", "certificate": "بكالوريوس", "grade": "الخامسة"},
+    {"name": "ازهار عبد الستار جاسم", "specialty": "اللغة العربية", "certificate": "بكالوريوس", "grade": "الثالثة"},
+    {"name": "اسماء عبدالهادي كشكول", "specialty": "مشرفة تربوية(صفوف اولية )", "certificate": "بكالوريوس", "grade": "الثالثة"},
+    {"name": "أسماء عبدالهادي كشكول", "specialty": "مشرفة الصفوف الاولية", "certificate": "بكالوريوس", "grade": "الثالثة"},
+    {"name": "أمل حمزه خضير", "specialty": "علم نفس/ارشاد تربوي", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "آس عقيل كاظم", "specialty": "اللغة العربية", "certificate": "ماجستير", "grade": "الرابعة"},
+    {"name": "باسم حساب راشد", "specialty": "اللغة العربية", "certificate": "دكتوراه", "grade": "الثالثة"},
+    {"name": "بتول كامل عباس", "specialty": "إداري", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "بشار عبدالله عبدالهادي", "specialty": "علوم الحياة", "certificate": "ماجستير", "grade": "الرابعة"},
+    {"name": "بلسم سالم داود", "specialty": "تاريخ", "certificate": "ماجستير", "grade": "الخامسة"},
+    {"name": "بهاء سامي لفتة", "specialty": "مشرف تربوي", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "تيجان صادق صاحب", "specialty": "علوم الحياة", "certificate": "بكالوريوس", "grade": "الرابعة"},
+    {"name": "ثائر نعيم كريم", "specialty": "اللغة العربية", "certificate": "بكالوريوس", "grade": "الرابعة"},
+    {"name": "جامل جبر عبدعلي", "specialty": "تربية رياضية - كشافة - قائد تدريب دولي", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "جبار جواد كاظم", "specialty": "رياضيات", "certificate": "بكالوريوس", "grade": "الثالثة"},
+    {"name": "جليل حليل نعيمه", "specialty": "اللغة العربية", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "جليل نغيمش فنوس", "specialty": "رياضيات", "certificate": "بكالوريوس", "grade": "الثانية"},
+    {"name": "حبيب حامد سليبح", "specialty": "علوم كيمياء", "certificate": "بكالوريوس", "grade": "الرابعة"},
+    {"name": "حسن علي عبد الحسين", "specialty": "المحاسبة", "certificate": "ماجستير", "grade": "الثالثة"},
+    {"name": "حسين جعيول عجه", "specialty": "مشرف اداري", "certificate": "دبلوم", "grade": "الثالثة"},
+    {"name": "حسين فالح حسن", "specialty": "ادارة الاعمال", "certificate": "بكالوريوس", "grade": "السادسة"},
+    {"name": "حنان فاضل جبير محمد", "specialty": "لغة عربية / لغة", "certificate": "ماجستير", "grade": "الرابعة"},
+    {"name": "حيدر رعد مطر", "specialty": "الكيمياء", "certificate": "ماجستير", "grade": "الخامسة"},
+    {"name": "حيدر عبدالساده عبدالله خليوي", "specialty": "تربية رياضيات", "certificate": "بكالوريوس", "grade": "السادسة"},
+    {"name": "حيدرعبد العباس حمادي", "specialty": "لغة إنكليزية", "certificate": "ماجستير", "grade": "الرابعة"},
+    {"name": "داخل حسين كشيش", "specialty": "الإجتماعيات", "certificate": "بكالوريوس", "grade": "الثانية"},
+    {"name": "رائد عبدالامير لفته", "specialty": "مشرف تربوي اداري", "certificate": "بكالوريوس", "grade": "الثالثة"},
+    {"name": "رحيم خريجان هداد", "specialty": "رياضيات", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "رستم هادي حميد", "specialty": "اختصاصي اداري", "certificate": "بكالوريوس", "grade": "الثانية"},
+    {"name": "رشا كاظم محمود", "specialty": "رياضيات وعلوم", "certificate": "دبلوم", "grade": "الرابعة"},
+    {"name": "رعد سعد جهاد", "specialty": "كيمياء", "certificate": "دكتوراه", "grade": "الرابعة"},
+    {"name": "رعد شاكر شكص", "specialty": "تربية رياضية", "certificate": "بكالوريوس", "grade": "الثانية"},
+    {"name": "رنا صبحي حسين", "specialty": "عربي", "certificate": "بكالوريوس", "grade": "الرابعة"},
+    {"name": "زهراء سعد خضير", "specialty": "اللغة الانكليزية", "certificate": "بكالوريوس", "grade": "الخامسة"},
+    {"name": "زينب جبار زري", "specialty": "مشرفة اللغة الإنكليزية", "certificate": "بكالوريوس", "grade": "الثانية"},
+    {"name": "زينب علي مسير", "specialty": "الرياضيات", "certificate": "بكالوريوس", "grade": "الخامسة"},
+    {"name": "زينب علي هاشم", "specialty": "مدرسة رياضيات", "certificate": "بكالوريوس", "grade": "الخامسة"},
+    {"name": "سرور عبد الحسين محمد", "specialty": "اداري", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "سلوى حمزه جبر", "specialty": "العلوم", "certificate": "دبلوم", "grade": "الأولى"},
+    {"name": "سمير تركي محمد", "specialty": "اللغة العربية", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "سؤدد عبد جري", "specialty": "رياضيات", "certificate": "بكالوريوس", "grade": "الثانية"},
+    {"name": "شاكر عبد الحسن بايش", "specialty": "قانون", "certificate": "ماجستير", "grade": "الرابعة"},
+    {"name": "شمخي جبار محمد", "specialty": "تربيه رياضيه", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "صاحب جابر طه", "specialty": "فنون تشكيلية فرع الرسم", "certificate": "بكالوريوس", "grade": "الثالثة"},
+    {"name": "صادق حمزة كاظم", "specialty": "اللغة العربية", "certificate": "بكالوريوس", "grade": "الثالثة"},
+    {"name": "صفاء فالح عبد الحسين", "specialty": "اللغة العربية", "certificate": "بكالوريوس", "grade": "الثانية"},
+    {"name": "صفاء هادي عبد العالي", "specialty": "تكنولوجيا المعلومات", "certificate": "ماجستير", "grade": "الثانية"},
+    {"name": "عبدالامير جبار عبدالله", "specialty": "محاسبة", "certificate": "ماجستير", "grade": "الثالثة"},
+    {"name": "عبدالرحمن يسر خليفة", "specialty": "كيمياء", "certificate": "دكتوراه", "grade": "الرابعة"},
+    {"name": "عبدالزهرة رحيم نجم", "specialty": "اداري", "certificate": "دبلوم", "grade": "الثانية"},
+    {"name": "عبدالله غازي ونان أحمد الصفراني", "specialty": "قانون", "certificate": "ماجستير", "grade": "الرابعة"},
+    {"name": "علي صباح مطشر", "specialty": "ادارة اعمال", "certificate": "بكالوريوس", "grade": "السادسة"},
+    {"name": "علي عبد الستار محمد", "specialty": "مرشد تربوي", "certificate": "بكالوريوس", "grade": "الرابعة"},
+    {"name": "علي عبدالله كاطع", "specialty": "قانون", "certificate": "ماجستير", "grade": "الرابعة"},
+    {"name": "علي فهد جايد", "specialty": "رياضيات", "certificate": "بكالوريوس", "grade": "الخامسة"},
+    {"name": "علي ماجد كريم", "specialty": "الرياضيات", "certificate": "بكالوريوس", "grade": "السادسة"},
+    {"name": "علي نحيل شنان", "specialty": "الفيزياء", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "غصون حسن عبود", "specialty": "الكيمياء", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "غيداء عباس محمد", "specialty": "اللغة العربية", "certificate": "بكالوريوس", "grade": "الثالثة"},
+    {"name": "فريد جاسم مثنى", "specialty": "إرشاد تربوي", "certificate": "دكتوراه", "grade": "الثالثة"},
+    {"name": "فولاذ مزعل عبد", "specialty": "قانون", "certificate": "ماجستير", "grade": "الخامسة"},
+    {"name": "قابل عجمي جبار", "specialty": "اختصاصي تربوي علوم حياة", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "قاسم خنجر عويد", "specialty": "تدريب العاب القوى/قائد تدريب دولي كشافة", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "قحطان عدنان حسن", "specialty": "معلم مهني", "certificate": "دبلوم", "grade": "الثانية"},
+    {"name": "كريم حنتوش عايد", "specialty": "الرياضيات", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "لطيف فاخر بريد", "specialty": "رياضيات", "certificate": "بكالوريوس", "grade": "الخامسة"},
+    {"name": "مأجد صالح خلف", "specialty": "اللغة الانكليزية", "certificate": "ماجستير", "grade": "الأولى"},
+    {"name": "محسن عبد مطر طوفان", "specialty": "قانون خاص", "certificate": "ماجستير", "grade": "الثالثة"},
+    {"name": "محمد حسن حمزة مطر", "specialty": "رياضيات", "certificate": "ماجستير", "grade": "الخامسة"},
+    {"name": "محمد فاخر ساهي", "specialty": "اللغة العربية", "certificate": "بكالوريوس", "grade": "الثالثة"},
+    {"name": "محمد كامل شاكر", "specialty": "معلومات ومكتبات", "certificate": "بكالوريوس", "grade": "الثالثة"},
+    {"name": "منار لطيف صالح", "specialty": "عام وصفوف اولية", "certificate": "دبلوم", "grade": "الثانية"},
+    {"name": "منتظر زغير حاتم", "specialty": "القانون العام", "certificate": "ماجستير", "grade": "الثالثة"},
+    {"name": "منذر ناصر عبدالله", "specialty": "تربية فنية", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "ميسون رزاق احمد", "specialty": "بكالوريوس علوم الحياة", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "نصير عبدالعزيز عبد الحسين", "specialty": "رياضيات", "certificate": "بكالوريوس", "grade": "الأولى"},
+    {"name": "هادي عبادي حسين", "specialty": "تاريخ", "certificate": "بكالوريوس", "grade": "الثالثة"},
+    {"name": "هدى عبدالرحمن شهاب جياد", "specialty": "اللغة العربية", "certificate": "ماجستير", "grade": "السابعة"},
+    {"name": "وسن شاكر رزاق", "specialty": "علوم الحياة", "certificate": "ماجستير", "grade": "الرابعة"},
+    {"name": "يونس شجاي شناوة", "specialty": "مدير قسم الاشراف الاختصاص", "certificate": "بكالوريوس", "grade": "الأولى"}
+];
+
+const GRADES = ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة', 'الثامنة', 'التاسعة', 'العاشرة'];
+const RATE_CATEGORIES = ['دبلوم', 'بكالوريوس', 'ماجستير', 'دكتوراه', 'مدير عام', 'مدير اقدم', 'رئيس مهندسين', 'مدير فني', 'وظائف أخرى'];
+
+const DEFAULT_RATES = {
+    'دبلوم':       [4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000],
+    'بكالوريوس':   [4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000],
+    'ماجستير':     [4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000],
+    'دكتوراه':     [5000, 5000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000],
+    'مدير عام':    [4000, 0,    0,    0,    0,    0,    0,    0,    0,    0],
+    'مدير اقدم':   [0,    4000, 0,    0,    0,    0,    0,    0,    0,    0],
+    'رئيس مهندسين':[0,    0,    4000, 0,    0,    0,    0,    0,    0,    0],
+    'مدير فني':    [0,    0,    4000, 0,    0,    0,    0,    0,    0,    0],
+    'وظائف أخرى':  [4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000]
+};
+
+let ratesMatrix = JSON.parse(JSON.stringify(DEFAULT_RATES));
+let leadersData = [];
+let customLeadersCatalog = [];
+let paymentRows = [];
+let savedPaymentLists = [];
+let activeScheduleRowIdx = -1;
+
+// ==================== Normalization Helpers ====================
+function normalizeGrade(g) {
+    if (!g) return 'الأولى';
+    const s = String(g).trim().replace('الاولى', 'الأولى');
+    const numMap = { '1': 'الأولى', '2': 'الثانية', '3': 'الثالثة', '4': 'الرابعة', '5': 'الخامسة', '6': 'السادسة', '7': 'السابعة', '8': 'الثامنة', '9': 'التاسعة', '10': 'العاشرة' };
+    if (numMap[s]) return numMap[s];
+    for (const gr of GRADES) {
+        if (s === gr || s.replace('أ', 'ا') === gr.replace('أ', 'ا')) return gr;
+    }
+    return 'الأولى';
+}
+
+function normalizeCertificate(c) {
+    if (!c) return 'بكالوريوس';
+    const s = String(c).trim();
+    if (s.includes('دكتورا')) return 'دكتوراه';
+    if (s.includes('ماجستير')) return 'ماجستير';
+    if (s.includes('دبلوم')) return 'دبلوم';
+    if (s.includes('بكالوريوس')) return 'بكالوريوس';
+    for (const cat of RATE_CATEGORIES) {
+        if (s === cat) return cat;
+    }
+    return s;
+}
+
+function calculateLecturePrice(cert, job, grade) {
+    const normGrade = normalizeGrade(grade);
+    const gradeIdx = GRADES.indexOf(normGrade);
+    if (gradeIdx === -1) return 4000;
+
+    const normCert = normalizeCertificate(cert);
+    const jobClean = String(job || '').trim().replace('أ', 'ا');
+
+    // Check special job title rules from Excel first if applicable
+    if (jobClean.includes('مدير عام') && gradeIdx === 0) return ratesMatrix['مدير عام'][0] || 4000;
+    if (jobClean.includes('مدير اقدم') && gradeIdx === 1) return ratesMatrix['مدير اقدم'][1] || 4000;
+    if (jobClean.includes('رئيس مهندسين') && gradeIdx === 2) return ratesMatrix['رئيس مهندسين'][2] || 4000;
+    if (jobClean.includes('مدير فني') && gradeIdx === 2) return ratesMatrix['مدير فني'][2] || 4000;
+
+    if (ratesMatrix[normCert] && ratesMatrix[normCert][gradeIdx] > 0) {
+        return ratesMatrix[normCert][gradeIdx];
+    }
+    return ratesMatrix['وظائف أخرى'][gradeIdx] || 4000;
+}
+
+function numberToArabicWords(num) {
+    num = Math.round(Number(num) || 0);
+    if (num === 0) return 'صفر دينار عراقي';
+    const ones = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثانية'.replace('ثانية','ثمانية'), 'تسعة'];
+    const teens = ['عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+    const tens = ['', '', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+    const hundreds = ['', 'مائة', 'مائتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة', 'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'];
+
+    function convertBelow1000(n) {
+        const parts = [];
+        const h = Math.floor(n / 100);
+        const rem = n % 100;
+        if (h > 0) parts.push(hundreds[h]);
+        if (rem >= 10 && rem < 20) {
+            parts.push(teens[rem - 10]);
+        } else {
+            const t = Math.floor(rem / 10);
+            const o = rem % 10;
+            if (o > 0) parts.push(ones[o]);
+            if (t > 0) parts.push(tens[t]);
+        }
+        return parts.join(' و');
+    }
+
+    const parts = [];
+    const millions = Math.floor(num / 1000000);
+    const thousands = Math.floor((num % 1000000) / 1000);
+    const rest = num % 1000;
+
+    if (millions > 0) {
+        if (millions === 1) parts.push('مليون');
+        else if (millions === 2) parts.push('مليونان');
+        else if (millions <= 10) parts.push(convertBelow1000(millions) + ' ملايين');
+        else parts.push(convertBelow1000(millions) + ' مليون');
+    }
+    if (thousands > 0) {
+        if (thousands === 1) parts.push('ألف');
+        else if (thousands === 2) parts.push('ألفان');
+        else if (thousands <= 10) parts.push(convertBelow1000(thousands) + ' آلاف');
+        else parts.push(convertBelow1000(thousands) + ' ألف');
+    }
+    if (rest > 0) {
+        parts.push(convertBelow1000(rest));
+    }
+    return parts.join(' و') + ' دينار عراقي لا غير';
+}
+
+// ==================== Data Loading & Persistence ====================
+async function loadSystemData() {
+    let backup = {};
+    try {
+        const localStr = localStorage.getItem('trainingBackupData');
+        if (localStr) backup = JSON.parse(localStr) || {};
+    } catch (e) {}
+
+    try {
+        const res = await fetch('/api/backup-data', { cache: 'no-store' });
+        if (res.ok) {
+            const serverData = await res.json();
+            if (serverData && typeof serverData === 'object') {
+                backup = { ...backup, ...serverData };
+                try { localStorage.setItem('trainingBackupData', JSON.stringify(backup)); } catch (e) {}
+            }
+        }
+    } catch (e) {}
+
+    leadersData = Array.isArray(backup.leadersData) ? backup.leadersData : [];
+    customLeadersCatalog = Array.isArray(backup.customLeadersCatalog) ? backup.customLeadersCatalog : [];
+    savedPaymentLists = Array.isArray(backup.lecturerPaymentsData) ? backup.lecturerPaymentsData : [];
+
+    try {
+        const savedRates = localStorage.getItem('lecturerPaymentRates');
+        if (savedRates) ratesMatrix = JSON.parse(savedRates);
+    } catch (e) {}
+
+    document.getElementById('leadersSourceBadge').textContent = `✅ سجل قادة التدريب: ${leadersData.length} سجل | القاعدة المرجعية: ${BUILTIN_QADA_CATALOG.length + customLeadersCatalog.length} قائد`;
+    document.getElementById('savedListsCount').textContent = savedPaymentLists.length;
+
+    populateExtractCourseDropdown();
+    populateManualCatalogDatalist();
+    applyLecturerPaymentsPrefill();
+    renderTable();
+}
+
+function applyLecturerPaymentsPrefill() {
+    try {
+        const raw = localStorage.getItem('lecturerPaymentsPrefill');
+        if (!raw) return;
+        const prefill = JSON.parse(raw);
+        if (!prefill || typeof prefill !== 'object') return;
+
+        const fieldMap = [
+            ['courseName', prefill.courseName],
+            ['courseMonth', prefill.courseMonth],
+            ['bookNumber', prefill.bookNumber],
+            ['bookDate', prefill.bookDate]
+        ];
+        fieldMap.forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (el && val) {
+                el.value = String(val).trim();
+            }
+        });
+    } catch (e) {}
+}
+
+async function syncSavedListsToBackend() {
+    try {
+        const backup = JSON.parse(localStorage.getItem('trainingBackupData') || '{}');
+        backup.lecturerPaymentsData = savedPaymentLists;
+        backup.lastUpdated = new Date().toISOString();
+        localStorage.setItem('trainingBackupData', JSON.stringify(backup));
+        await fetch('/api/backup-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(backup)
+        });
+        if (window.FirebaseSync && typeof FirebaseSync.scheduleAutoPush === 'function') {
+            FirebaseSync.scheduleAutoPush(() => backup);
+        }
+    } catch (e) {}
+    document.getElementById('savedListsCount').textContent = savedPaymentLists.length;
+}
+
+function populateExtractCourseDropdown() {
+    const sel = document.getElementById('extractCourseSelect');
+    const courses = [...new Set(leadersData.map(l => (l.course || '').trim()).filter(c => c && c !== '-'))];
+    sel.innerHTML = '<option value="__all__">-- جميع الدورات في سجل قادة التدريب (' + leadersData.length + ' سجل) --</option>';
+    courses.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        sel.appendChild(opt);
+    });
+}
+
+function getMergedCatalog() {
+    const map = new Map();
+    const addEntry = (item) => {
+        const name = (item.name || '').trim();
+        if (!name) return;
+        const existing = map.get(name) || {};
+        map.set(name, {
+            name,
+            certificate: item.certificate || existing.certificate || 'بكالوريوس',
+            job: item.job || item.specialty || existing.job || '',
+            grade: normalizeGrade(item.grade || existing.grade || 'الأولى'),
+            lectureTopic: item.lectureTopic || existing.lectureTopic || ''
+        });
+    };
+    BUILTIN_QADA_CATALOG.forEach(addEntry);
+    customLeadersCatalog.forEach(addEntry);
+    leadersData.forEach(addEntry);
+    return Array.from(map.values());
+}
+
+function populateManualCatalogDatalist() {
+    const dl = document.getElementById('leadersCatalogDatalist');
+    dl.innerHTML = '';
+    getMergedCatalog().forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.name;
+        dl.appendChild(opt);
+    });
+}
+
+// ==================== Row Extraction & Management ====================
+function createEmptySchedule() {
+    return Array.from({ length: 5 }, () => [0, 0, 0, 0, 0, 0]);
+}
+
+function buildPaymentRowFromLeader(leader) {
+    const cert = normalizeCertificate(leader.certificate);
+    const job = (leader.job || leader.specialty || '').trim();
+    const grade = normalizeGrade(leader.grade);
+    const lecturesCount = Math.max(0, Number(leader.lecturesCount) || 1);
+    const unitPrice = calculateLecturePrice(cert, job, grade);
+    return {
+        name: (leader.name || '').trim(),
+        certificate: cert,
+        job: job,
+        grade: grade,
+        lectureTopic: (leader.lectureTopic || '').trim(),
+        dateFrom: leader.date || '',
+        dateTo: leader.date || '',
+        lecturesCount: lecturesCount,
+        unitPrice: unitPrice,
+        manualPriceOverride: false,
+        schedule: createEmptySchedule()
+    };
+}
+
+function extractFromLeadersData(replaceExisting) {
+    const selectedCourse = document.getElementById('extractCourseSelect').value;
+    const bookFilter = (document.getElementById('extractBookFilter').value || '').trim();
+
+    let filtered = leadersData.filter(l => {
+        if (selectedCourse !== '__all__' && (l.course || '').trim() !== selectedCourse) return false;
+        if (bookFilter && !(l.bookNumber || '').includes(bookFilter)) return false;
+        return true;
+    });
+
+    if (filtered.length === 0) {
+        alert('لم يتم العثور على سجلات مطابقة في قسم قادة التدريب.');
+        return;
+    }
+
+    if (replaceExisting) paymentRows = [];
+
+    // Populate course header automatically from the first matching record if empty
+    const first = filtered[0];
+    if (selectedCourse !== '__all__' && !document.getElementById('courseName').value) {
+        document.getElementById('courseName').value = selectedCourse;
+    } else if (first.course && first.course !== '-' && !document.getElementById('courseName').value) {
+        document.getElementById('courseName').value = first.course;
+    }
+    if (first.bookNumber && !document.getElementById('bookNumber').value) {
+        document.getElementById('bookNumber').value = first.bookNumber;
+    }
+    if (first.bookDate && !document.getElementById('bookDate').value) {
+        document.getElementById('bookDate').value = first.bookDate;
+    }
+
+    filtered.forEach(item => {
+        paymentRows.push(buildPaymentRowFromLeader(item));
+    });
+
+    renderTable();
+}
+
+function addSelectedLeaderRow() {
+    const inp = document.getElementById('manualLeaderSearch');
+    const query = (inp.value || '').trim();
+    if (!query) {
+        alert('يرجى كتابة أو اختيار اسم المحاضر أولاً.');
+        return;
+    }
+    const catalog = getMergedCatalog();
+    const match = catalog.find(c => c.name === query) || catalog.find(c => c.name.includes(query));
+    if (match) {
+        paymentRows.push(buildPaymentRowFromLeader(match));
+    } else {
+        paymentRows.push(buildPaymentRowFromLeader({ name: query, certificate: 'بكالوريوس', grade: 'الأولى', lecturesCount: 1 }));
+    }
+    inp.value = '';
+    renderTable();
+}
+
+function addEmptyRow() {
+    paymentRows.push(buildPaymentRowFromLeader({ name: '', certificate: 'بكالوريوس', job: '', grade: 'الأولى', lectureTopic: '', lecturesCount: 1 }));
+    renderTable();
+}
+
+function removeRow(idx) {
+    paymentRows.splice(idx, 1);
+    renderTable();
+}
+
+function clearCurrentList() {
+    if (paymentRows.length === 0) return;
+    if (confirm('هل أنت متأكد من تفريغ جميع الصفوف في الجدول الحالي؟')) {
+        paymentRows = [];
+        renderTable();
+    }
+}
+
+function onRowFieldChange(idx, field, value) {
+    const row = paymentRows[idx];
+    if (!row) return;
+    if (field === 'lecturesCount') {
+        row.lecturesCount = Math.max(0, Number(value) || 0);
+    } else if (field === 'unitPrice') {
+        row.unitPrice = Math.max(0, Number(value) || 0);
+        row.manualPriceOverride = true;
+    } else {
+        row[field] = value;
+        if ((field === 'certificate' || field === 'job' || field === 'grade') && !row.manualPriceOverride) {
+            row.unitPrice = calculateLecturePrice(row.certificate, row.job, row.grade);
+        }
+    }
+    updateTotalsAndRowDisplay(idx);
+}
+
+function updateTotalsAndRowDisplay(idx) {
+    const row = paymentRows[idx];
+    if (row) {
+        const amountEl = document.getElementById(`rowAmount_${idx}`);
+        const priceEl = document.getElementById(`rowPrice_${idx}`);
+        if (priceEl && document.activeElement !== priceEl) priceEl.value = row.unitPrice;
+        if (amountEl) amountEl.textContent = (row.lecturesCount * row.unitPrice).toLocaleString('en-US');
+    }
+    let totalLectures = 0;
+    let totalAmount = 0;
+    paymentRows.forEach(r => {
+        totalLectures += Number(r.lecturesCount) || 0;
+        totalAmount += (Number(r.lecturesCount) || 0) * (Number(r.unitPrice) || 0);
+    });
+    document.getElementById('statLecturersCount').textContent = paymentRows.length;
+    document.getElementById('statTotalLectures').textContent = totalLectures.toLocaleString('en-US');
+    document.getElementById('statTotalAmount').textContent = totalAmount.toLocaleString('en-US');
+    document.getElementById('statAmountWords').textContent = numberToArabicWords(totalAmount);
+    document.getElementById('footTotalLectures').textContent = totalLectures.toLocaleString('en-US');
+    document.getElementById('footTotalAmount').textContent = totalAmount.toLocaleString('en-US') + ' دينار';
+}
+
+function renderTable() {
+    const tbody = document.getElementById('paymentsTableBody');
+    if (paymentRows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="12" class="py-8 text-slate-500 font-bold">لا توجد بيانات حالياً. استخدم "⚡ استخلاص من قادة التدريب" أو "➕ إضافة" لبدء حساب الأجور.</td></tr>';
+        updateTotalsAndRowDisplay(-1);
+        return;
+    }
+
+    tbody.innerHTML = paymentRows.map((row, idx) => {
+        const total = (Number(row.lecturesCount) || 0) * (Number(row.unitPrice) || 0);
+        const certOpts = ['دبلوم', 'بكالوريوس', 'ماجستير', 'دكتوراه', 'مدير عام', 'مدير اقدم', 'رئيس مهندسين', 'مدير فني', 'وظائف أخرى']
+            .map(c => `<option value="${c}" ${row.certificate === c ? 'selected' : ''}>${c}</option>`).join('');
+        const gradeOpts = GRADES
+            .map(g => `<option value="${g}" ${row.grade === g ? 'selected' : ''}>${g}</option>`).join('');
+        return `
+        <tr>
+            <td class="font-bold text-slate-700">${idx + 1}</td>
+            <td><input type="text" class="cell-input cell-input-right font-bold" value="${escapeHtml(row.name)}" oninput="onRowFieldChange(${idx}, 'name', this.value)"></td>
+            <td><select class="cell-input" onchange="onRowFieldChange(${idx}, 'certificate', this.value)">${certOpts}</select></td>
+            <td><input type="text" class="cell-input cell-input-right" value="${escapeHtml(row.job)}" oninput="onRowFieldChange(${idx}, 'job', this.value)"></td>
+            <td><select class="cell-input" onchange="onRowFieldChange(${idx}, 'grade', this.value)">${gradeOpts}</select></td>
+            <td><input type="text" class="cell-input cell-input-right" value="${escapeHtml(row.lectureTopic)}" oninput="onRowFieldChange(${idx}, 'lectureTopic', this.value)"></td>
+            <td><input type="date" class="cell-input" value="${escapeHtml(row.dateFrom)}" onchange="onRowFieldChange(${idx}, 'dateFrom', this.value)"></td>
+            <td><input type="date" class="cell-input" value="${escapeHtml(row.dateTo)}" onchange="onRowFieldChange(${idx}, 'dateTo', this.value)"></td>
+            <td><input type="number" min="0" class="cell-input font-bold text-indigo-700" value="${row.lecturesCount}" oninput="onRowFieldChange(${idx}, 'lecturesCount', this.value)"></td>
+            <td><input type="number" min="0" step="500" id="rowPrice_${idx}" class="cell-input font-bold" value="${row.unitPrice}" oninput="onRowFieldChange(${idx}, 'unitPrice', this.value)"></td>
+            <td id="rowAmount_${idx}" class="font-extrabold text-emerald-700 bg-emerald-50">${total.toLocaleString('en-US')}</td>
+            <td>
+                <div class="flex gap-1 justify-center">
+                    <button type="button" onclick="openScheduleModal(${idx})" class="px-2 py-1 rounded bg-indigo-100 text-indigo-800 hover:bg-indigo-200 font-bold text-xs" title="توزيع المحاضرات على أيام الأسبوع">📅 الأيام</button>
+                    <button type="button" onclick="removeRow(${idx})" class="px-2 py-1 rounded bg-rose-100 text-rose-700 hover:bg-rose-200 font-bold text-xs" title="حذف">🗑️</button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+
+    updateTotalsAndRowDisplay(-1);
+}
+
+function escapeHtml(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ==================== 5x6 Weekly Schedule Modal ====================
+function openScheduleModal(idx) {
+    activeScheduleRowIdx = idx;
+    const row = paymentRows[idx];
+    if (!row.schedule) row.schedule = createEmptySchedule();
+    document.getElementById('schedLecturerName').textContent = row.name || `محاضر #${idx + 1}`;
+    renderScheduleGrid();
+    document.getElementById('scheduleModal').classList.remove('hidden');
+}
+
+function closeScheduleModal() {
+    document.getElementById('scheduleModal').classList.add('hidden');
+    activeScheduleRowIdx = -1;
+}
+
+function renderScheduleGrid() {
+    const row = paymentRows[activeScheduleRowIdx];
+    const tbody = document.getElementById('scheduleGridBody');
+    let grandTotal = 0;
+    tbody.innerHTML = row.schedule.map((week, wIdx) => {
+        const wSum = week.reduce((a, b) => a + (Number(b) || 0), 0);
+        grandTotal += wSum;
+        const cells = week.map((val, dIdx) => `
+            <td><input type="number" min="0" class="cell-input" value="${val}" oninput="updateScheduleCell(${wIdx}, ${dIdx}, this.value)"></td>
+        `).join('');
+        return `<tr><td class="font-bold">الأسبوع ${wIdx + 1}</td>${cells}<td id="weekSum_${wIdx}" class="font-bold bg-indigo-50 text-indigo-800">${wSum}</td></tr>`;
+    }).join('');
+    document.getElementById('schedTotalDisplay').textContent = grandTotal;
+}
+
+function updateScheduleCell(wIdx, dIdx, val) {
+    const row = paymentRows[activeScheduleRowIdx];
+    row.schedule[wIdx][dIdx] = Math.max(0, Number(val) || 0);
+    const wSum = row.schedule[wIdx].reduce((a, b) => a + b, 0);
+    document.getElementById(`weekSum_${wIdx}`).textContent = wSum;
+    const grandTotal = row.schedule.flat().reduce((a, b) => a + b, 0);
+    document.getElementById('schedTotalDisplay').textContent = grandTotal;
+}
+
+function clearScheduleGrid() {
+    if (activeScheduleRowIdx < 0) return;
+    paymentRows[activeScheduleRowIdx].schedule = createEmptySchedule();
+    renderScheduleGrid();
+}
+
+function applyScheduleModal() {
+    if (activeScheduleRowIdx < 0) return;
+    const row = paymentRows[activeScheduleRowIdx];
+    const grandTotal = row.schedule.flat().reduce((a, b) => a + b, 0);
+    row.lecturesCount = grandTotal;
+    closeScheduleModal();
+    renderTable();
+}
+
+// ==================== Pricing Rates Modal ====================
+function openRatesModal() {
+    const table = document.getElementById('ratesMatrixTable');
+    let html = `<thead><tr><th>الفئة / الشهادة</th>${GRADES.map(g => `<th>${g}</th>`).join('')}</tr></thead><tbody>`;
+    RATE_CATEGORIES.forEach(cat => {
+        html += `<tr><td class="font-bold text-right px-2">${cat}</td>`;
+        GRADES.forEach((_, gIdx) => {
+            const val = (ratesMatrix[cat] && ratesMatrix[cat][gIdx]) || 0;
+            html += `<td><input type="number" min="0" step="500" data-cat="${cat}" data-gidx="${gIdx}" class="cell-input rate-input" value="${val}"></td>`;
+        });
+        html += `</tr>`;
+    });
+    html += `</tbody>`;
+    table.innerHTML = html;
+    document.getElementById('ratesModal').classList.remove('hidden');
+}
+
+function closeRatesModal() {
+    document.getElementById('ratesModal').classList.add('hidden');
+}
+
+function resetDefaultRates() {
+    ratesMatrix = JSON.parse(JSON.stringify(DEFAULT_RATES));
+    openRatesModal();
+}
+
+function saveRatesFromModal() {
+    document.querySelectorAll('.rate-input').forEach(inp => {
+        const cat = inp.dataset.cat;
+        const gIdx = Number(inp.dataset.gidx);
+        if (!ratesMatrix[cat]) ratesMatrix[cat] = Array(10).fill(4000);
+        ratesMatrix[cat][gIdx] = Math.max(0, Number(inp.value) || 0);
+    });
+    try { localStorage.setItem('lecturerPaymentRates', JSON.stringify(ratesMatrix)); } catch (e) {}
+    paymentRows.forEach(r => {
+        if (!r.manualPriceOverride) {
+            r.unitPrice = calculateLecturePrice(r.certificate, r.job, r.grade);
+        }
+    });
+    closeRatesModal();
+    renderTable();
+}
+
+// ==================== Saved Lists ====================
+async function saveCurrentListPrompt() {
+    if (paymentRows.length === 0) {
+        alert('الجدول فارغ! أضف محاضرين أولاً قبل الحفظ.');
+        return;
+    }
+    const defaultTitle = document.getElementById('courseName').value || `قائمة صرفيات ${new Date().toLocaleDateString('ar-IQ')}`;
+    const title = prompt('أدخل اسماً لحفظ قائمة الصرفيات:', defaultTitle);
+    if (!title) return;
+
+    const totalAmount = paymentRows.reduce((s, r) => s + (r.lecturesCount * r.unitPrice), 0);
+    const entry = {
+        id: Date.now(),
+        title: title.trim(),
+        savedAt: new Date().toISOString(),
+        header: {
+            courseName: document.getElementById('courseName').value,
+            courseMonth: document.getElementById('courseMonth').value,
+            bookNumber: document.getElementById('bookNumber').value,
+            bookDate: document.getElementById('bookDate').value,
+            empResponsible: document.getElementById('empResponsible').value,
+            sectionHead: document.getElementById('sectionHead').value,
+            courseDirector: document.getElementById('courseDirector').value,
+            deptDirector: document.getElementById('deptDirector').value
+        },
+        totalAmount,
+        rows: JSON.parse(JSON.stringify(paymentRows))
+    };
+    savedPaymentLists.unshift(entry);
+    await syncSavedListsToBackend();
+    alert('✅ تم حفظ قائمة الصرفيات بنجاح.');
+}
+
+function openSavedListsModal() {
+    const container = document.getElementById('savedListsContainer');
+    if (savedPaymentLists.length === 0) {
+        container.innerHTML = '<div class="text-center text-slate-500 py-6 font-bold">لا توجد قوائم محفوظة بعد.</div>';
+    } else {
+        container.innerHTML = savedPaymentLists.map((item, idx) => `
+            <div class="flex justify-between items-center flex-wrap gap-2 p-3 rounded-lg border border-slate-200 bg-slate-50">
+                <div>
+                    <div class="font-extrabold text-slate-800">${escapeHtml(item.title)}</div>
+                    <div class="text-xs text-slate-500">المحاضرين: ${item.rows.length} | الإجمالي: ${(item.totalAmount || 0).toLocaleString('en-US')} دينار | ${new Date(item.savedAt).toLocaleString('ar-IQ')}</div>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="loadSavedList(${idx})" class="btn-primary bg-indigo-600 text-white text-xs">📂 فتح</button>
+                    <button type="button" onclick="deleteSavedList(${idx})" class="btn-primary bg-rose-600 text-white text-xs">🗑️ حذف</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    document.getElementById('savedListsModal').classList.remove('hidden');
+}
+
+function closeSavedListsModal() {
+    document.getElementById('savedListsModal').classList.add('hidden');
+}
+
+function loadSavedList(idx) {
+    const item = savedPaymentLists[idx];
+    if (!item) return;
+    const h = item.header || {};
+    document.getElementById('courseName').value = h.courseName || '';
+    document.getElementById('courseMonth').value = h.courseMonth || '';
+    document.getElementById('bookNumber').value = h.bookNumber || '';
+    document.getElementById('bookDate').value = h.bookDate || '';
+    document.getElementById('empResponsible').value = h.empResponsible || 'ايمان عباس هلول';
+    document.getElementById('sectionHead').value = h.sectionHead || 'م.م حسين فالح حسن';
+    document.getElementById('courseDirector').value = h.courseDirector || '';
+    document.getElementById('deptDirector').value = h.deptDirector || 'م.م صفاء هادي عبد العالي';
+    paymentRows = JSON.parse(JSON.stringify(item.rows || []));
+    closeSavedListsModal();
+    renderTable();
+}
+
+async function deleteSavedList(idx) {
+    if (!confirm('حذف هذه القائمة المحفوظة؟')) return;
+    savedPaymentLists.splice(idx, 1);
+    await syncSavedListsToBackend();
+    openSavedListsModal();
+}
+
+// ==================== Excel Import & Export ====================
+function handleImportExcel(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+            const ws = wb.Sheets['Sheet1'] || wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+            const imported = [];
+            for (let r = 0; r < rows.length; r++) {
+                const row = rows[r];
+                const seq = Number(row[0]);
+                const name = String(row[1] || '').trim();
+                if (seq > 0 && name) {
+                    const cert = normalizeCertificate(row[2]);
+                    const grade = normalizeGrade(row[3]);
+                    const topic = String(row[4] || '').trim();
+                    const lects = Number(row[9]) || 1;
+                    const catalogMatch = getMergedCatalog().find(c => c.name === name);
+                    imported.push(buildPaymentRowFromLeader({
+                        name,
+                        certificate: cert || (catalogMatch ? catalogMatch.certificate : 'بكالوريوس'),
+                        job: catalogMatch ? catalogMatch.job : '',
+                        grade: grade || (catalogMatch ? catalogMatch.grade : 'الأولى'),
+                        lectureTopic: topic,
+                        lecturesCount: lects
+                    }));
+                }
+            }
+            if (imported.length > 0) {
+                paymentRows = imported;
+                renderTable();
+                alert(`✅ تم استيراد ${imported.length} محاضر من ملف Excel بنجاح.`);
+            } else {
+                alert('لم يتم العثور على صفوف محاضرين صالحة في الورقة الأولى.');
+            }
+        } catch (err) {
+            alert('حدث خطأ أثناء قراءة الملف: ' + err.message);
+        }
+    };
+    reader.readAsArrayBuffer(file);
+    event.target.value = '';
+}
+
+function exportToExcel() {
+    if (paymentRows.length === 0) {
+        alert('الجدول فارغ!');
+        return;
+    }
+    const course = document.getElementById('courseName').value || '-';
+    const month = document.getElementById('courseMonth').value || '-';
+    const bookNo = document.getElementById('bookNumber').value || '-';
+    const bookDate = document.getElementById('bookDate').value || '-';
+
+    // Sheet 1: قائمة أجور المحاضرات
+    const aoa1 = [
+        ['قسم الاعداد والتدريب - شعبة التدريب'],
+        [`قائمة اجور المحاضرات لشهر (${month}) في دورة (${course}) | رقم كتاب التكليف: ${bookNo} | تاريخ كتاب التكليف: ${bookDate}`],
+        ['ت', 'اسم المحاضر', 'الشهادة', 'العنوان الوظيفي', 'الدرجة الوظيفية', 'موضوع المحاضرة', 'من تاريخ', 'إلى تاريخ', 'مجموع المحاضرات', 'سعر المحاضرة', 'المبلغ (دينار)']
+    ];
+    let totLect = 0, totAmt = 0;
+    paymentRows.forEach((r, i) => {
+        const amt = (Number(r.lecturesCount) || 0) * (Number(r.unitPrice) || 0);
+        totLect += Number(r.lecturesCount) || 0;
+        totAmt += amt;
+        aoa1.push([i + 1, r.name, r.certificate, r.job, r.grade, r.lectureTopic, r.dateFrom, r.dateTo, r.lecturesCount, r.unitPrice, amt]);
+    });
+    aoa1.push(['', 'المجموع الكلي', '', '', '', '', '', '', totLect, '', totAmt]);
+    aoa1.push(['', 'المبلغ كتابة:', numberToArabicWords(totAmt)]);
+    aoa1.push([]);
+    aoa1.push(['الموظف المسؤول', document.getElementById('empResponsible').value, '', 'مسؤول الشعبة', document.getElementById('sectionHead').value, '', 'مدير الدورة', document.getElementById('courseDirector').value, '', 'مدير القسم', document.getElementById('deptDirector').value]);
+
+    // Sheet 2: خلاصة الأجور (safaa)
+    const aoa2 = [['ت', 'اسم الدورة', 'اسم المحاضر', 'الأجور (دينار)']];
+    paymentRows.forEach((r, i) => {
+        aoa2.push([i + 1, i === 0 ? course : '', r.name, (Number(r.lecturesCount) || 0) * (Number(r.unitPrice) || 0)]);
+    });
+    aoa2.push(['', '', 'المجموع الكلي', totAmt]);
+
+    const wb = XLSX.utils.book_new();
+    const ws1 = XLSX.utils.aoa_to_sheet(aoa1);
+    const ws2 = XLSX.utils.aoa_to_sheet(aoa2);
+    if (!ws1['!views']) ws1['!views'] = [{ rightToLeft: true }];
+    if (!ws2['!views']) ws2['!views'] = [{ rightToLeft: true }];
+    XLSX.utils.book_append_sheet(wb, ws1, 'قائمة الأجور');
+    XLSX.utils.book_append_sheet(wb, ws2, 'خلاصة الأجور');
+
+    const safeCourse = course.replace(/[\\/:*?"<>|]/g, '_');
+    XLSX.writeFile(wb, `صرفيات_أجور_المحاضرين_${safeCourse}.xlsx`);
+}
+
+// ==================== Word Export with Elegant Header ====================
+async function fetchImageAsBase64(url) {
+    try {
+        const res = await fetch(url);
+        if (!res.ok) return '';
+        const blob = await res.blob();
+        return await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result || '');
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(blob);
+        });
+    } catch (e) {
+        return '';
+    }
+}
+
+async function exportToWord() {
+    if (paymentRows.length === 0) {
+        alert('الجدول فارغ! يرجى إضافة محاضرين أولاً.');
+        return;
+    }
+
+    const course = document.getElementById('courseName').value || '................';
+    const month = document.getElementById('courseMonth').value || '.... / ....';
+    const bookNo = document.getElementById('bookNumber').value || '........';
+    const bookDate = document.getElementById('bookDate').value || '.... / .... / ....';
+    const empResp = document.getElementById('empResponsible').value || '';
+    const secHead = document.getElementById('sectionHead').value || '';
+    const courseDir = document.getElementById('courseDirector').value || '';
+    const deptDir = document.getElementById('deptDirector').value || '';
+
+    let totLect = 0, totAmt = 0;
+    const rowsHtml = paymentRows.map((r, i) => {
+        const amt = (Number(r.lecturesCount) || 0) * (Number(r.unitPrice) || 0);
+        totLect += Number(r.lecturesCount) || 0;
+        totAmt += amt;
+        const bg = i % 2 === 1 ? '#f8fafc' : '#ffffff';
+        return `<tr style="background:${bg};">
+            <td style="font-weight:bold;">${i + 1}</td>
+            <td style="text-align:right; font-weight:bold; color:#0f172a;">${escapeHtml(r.name)}</td>
+            <td>${escapeHtml(r.certificate)}</td>
+            <td style="text-align:right;">${escapeHtml(r.job)}</td>
+            <td>${escapeHtml(r.grade)}</td>
+            <td style="text-align:right;">${escapeHtml(r.lectureTopic)}</td>
+            <td>${escapeHtml(r.dateFrom)}</td>
+            <td>${escapeHtml(r.dateTo)}</td>
+            <td style="font-weight:bold; color:#1e40af;">${r.lecturesCount}</td>
+            <td>${Number(r.unitPrice).toLocaleString('en-US')}</td>
+            <td style="font-weight:bold; color:#065f46;">${amt.toLocaleString('en-US')}</td>
+            <td></td>
+        </tr>`;
+    }).join('');
+
+    const docHtml = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>قائمة أجور المحاضرين</title>
+<!--[if gte mso 9]>
+<xml>
+<w:WordDocument>
+  <w:View>Print</w:View>
+  <w:Zoom>100</w:Zoom>
+  <w:DoNotOptimizeForBrowser/>
+</w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+@page Section1 {
+    size: 29.7cm 21.0cm;
+    mso-page-orientation: landscape;
+    margin: 1.1cm 1.2cm 1.1cm 1.2cm;
+    border: solid #1e3a8a 2pt;
+    mso-border-top-alt: solid #1e3a8a 2pt;
+    mso-border-right-alt: solid #1e3a8a 2pt;
+    mso-border-bottom-alt: solid #1e3a8a 2pt;
+    mso-border-left-alt: solid #1e3a8a 2pt;
+    padding: 12pt 14pt 12pt 14pt;
+    mso-border-shadow: no;
+    mso-page-border-surround-header: no;
+    mso-page-border-surround-footer: no;
+}
+div.Section1 { page: Section1; }
+body { font-family: 'Arial', 'Tahoma', sans-serif; direction: rtl; text-align: right; color: #0f172a; }
+.header-box-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 2px solid #1e3a8a;
+    background-color: #f8fafc;
+    margin-bottom: 12px;
+}
+.header-title-cell {
+    text-align: center;
+    padding: 8px 12px 6px 12px;
+    border: none;
+    border-bottom: 1.5px solid #cbd5e1;
+    background-color: #f8fafc;
+}
+.header-title-main {
+    text-align: center;
+    font-size: 16pt;
+    font-weight: bold;
+    color: #1e3a8a;
+    margin: 0 0 3px 0;
+}
+.header-title-sub {
+    text-align: center;
+    font-size: 13pt;
+    font-weight: bold;
+    color: #0f172a;
+    margin: 0;
+}
+.header-meta-cell {
+    border: none;
+    padding: 6px 6px;
+    font-size: 10.5pt;
+    font-weight: bold;
+    color: #334155;
+    text-align: center;
+    background-color: #f8fafc;
+    width: 25%;
+}
+.data-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-top: 8px; }
+.data-table th {
+    background-color: #1e3a8a;
+    color: #ffffff;
+    border: 1px solid #1e293b;
+    padding: 7px 5px;
+    font-weight: bold;
+    text-align: center;
+}
+.data-table td {
+    border: 1px solid #475569;
+    padding: 5px 5px;
+    text-align: center;
+    vertical-align: middle;
+}
+.total-row td {
+    background-color: #e0e7ff;
+    font-weight: bold;
+    font-size: 10.5pt;
+    color: #1e1b4b;
+    border: 1.5px solid #1e3a8a;
+}
+.words-box {
+    margin-top: 10px;
+    padding: 7px 12px;
+    background-color: #ecfdf5;
+    border: 1px solid #059669;
+    font-size: 10.5pt;
+    font-weight: bold;
+    color: #065f46;
+}
+.sig-table { width: 100%; border-collapse: collapse; margin-top: 26px; }
+.sig-table td { border: none; text-align: center; font-size: 10.5pt; font-weight: bold; vertical-align: top; width: 25%; }
+</style>
+</head>
+<body>
+<div class="Section1">
+    <table class="header-box-table">
+        <tr>
+            <td colspan="4" class="header-title-cell">
+                <div class="header-title-main">قسم الإعداد والتدريب &ndash; شعبة التدريب</div>
+                <div class="header-title-sub">قائمة أجور المحاضرات للمحاضرين من قادة التدريب</div>
+            </td>
+        </tr>
+        <tr>
+            <td class="header-meta-cell">الدورة: <span style="color:#1e3a8a;">${escapeHtml(course)}</span></td>
+            <td class="header-meta-cell">الشهر / السنة: <span style="color:#1e3a8a;">${escapeHtml(month)}</span></td>
+            <td class="header-meta-cell">رقم كتاب التكليف: <span style="color:#1e3a8a;">${escapeHtml(bookNo)}</span></td>
+            <td class="header-meta-cell">تاريخ كتاب التكليف: <span style="color:#1e3a8a;">${escapeHtml(bookDate)}</span></td>
+        </tr>
+    </table>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width:28px;">ت</th>
+                <th>اسم المحاضر</th>
+                <th>الشهادة</th>
+                <th>العنوان الوظيفي</th>
+                <th>الدرجة</th>
+                <th>موضوع المحاضرة</th>
+                <th>من</th>
+                <th>إلى</th>
+                <th>عدد المحاضرات</th>
+                <th>سعر المحاضرة</th>
+                <th>المبلغ (دينار)</th>
+                <th style="width:75px;">التوقيع</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${rowsHtml}
+            <tr class="total-row">
+                <td colspan="8" style="text-align:center;">المجموع الكلي</td>
+                <td>${totLect}</td>
+                <td>-</td>
+                <td>${totAmt.toLocaleString('en-US')}</td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="words-box">المبلغ كتابةً: ${numberToArabicWords(totAmt)}</div>
+
+    <table class="sig-table">
+        <tr>
+            <td>توقيع الموظف المسؤول<br><br><br>${escapeHtml(empResp)}</td>
+            <td>توقيع مسؤول الشعبة<br><br><br>${escapeHtml(secHead)}</td>
+            <td>توقيع مدير الدورة<br><br><br>${escapeHtml(courseDir)}</td>
+            <td>توقيع مدير القسم<br><br><br>${escapeHtml(deptDir)}</td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>`;
+
+    const blob = new Blob(['\ufeff', docHtml], { type: 'application/msword;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const safeCourse = course.replace(/[\\/:*?"<>|]/g, '_');
+    const fileName = `صرفيات_أجور_المحاضرين_${safeCourse}.doc`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ==================== Official Print ====================
+function printOfficialList() {
+    if (paymentRows.length === 0) {
+        alert('الجدول فارغ!');
+        return;
+    }
+    const course = document.getElementById('courseName').value || '................';
+    const month = document.getElementById('courseMonth').value || '.... / ....';
+    const bookNo = document.getElementById('bookNumber').value || '........';
+    const bookDate = document.getElementById('bookDate').value || '.... / .... / ....';
+
+    let totLect = 0, totAmt = 0;
+    const rowsHtml = paymentRows.map((r, i) => {
+        const amt = (Number(r.lecturesCount) || 0) * (Number(r.unitPrice) || 0);
+        totLect += Number(r.lecturesCount) || 0;
+        totAmt += amt;
+        return `<tr>
+            <td>${i + 1}</td>
+            <td style="text-align:right; font-weight:bold;">${escapeHtml(r.name)}</td>
+            <td>${escapeHtml(r.certificate)}</td>
+            <td>${escapeHtml(r.job)}</td>
+            <td>${escapeHtml(r.grade)}</td>
+            <td style="text-align:right;">${escapeHtml(r.lectureTopic)}</td>
+            <td>${escapeHtml(r.dateFrom)}</td>
+            <td>${escapeHtml(r.dateTo)}</td>
+            <td>${r.lecturesCount}</td>
+            <td>${Number(r.unitPrice).toLocaleString('en-US')}</td>
+            <td style="font-weight:bold;">${amt.toLocaleString('en-US')}</td>
+            <td></td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('printSection').innerHTML = `
+        <div style="border: 2px solid #1e3a8a; padding: 12px;">
+        <div style="text-align:center; margin-bottom:10px;">
+            <h2 style="font-size:16px; font-weight:bold; margin:0;">قسم الإعداد والتدريب - شعبة التدريب</h2>
+            <p style="font-size:13px; font-weight:bold; margin:6px 0;">
+                قائمة أجور المحاضرات لشهر (${escapeHtml(month)}) في دورة (${escapeHtml(course)}) &nbsp;|&nbsp;
+                رقم كتاب التكليف: (${escapeHtml(bookNo)}) &nbsp;|&nbsp; تاريخ كتاب التكليف: (${escapeHtml(bookDate)})
+            </p>
+        </div>
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th>ت</th>
+                    <th>اسم المحاضر</th>
+                    <th>الشهادة</th>
+                    <th>العنوان الوظيفي</th>
+                    <th>الدرجة</th>
+                    <th>موضوع المحاضرة</th>
+                    <th>من</th>
+                    <th>إلى</th>
+                    <th>عدد المحاضرات</th>
+                    <th>سعر المحاضرة</th>
+                    <th>المبلغ (دينار)</th>
+                    <th style="width:70px;">التوقيع</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rowsHtml}
+                <tr style="font-weight:bold; background:#f1f5f9;">
+                    <td colspan="8">المجموع الكلي</td>
+                    <td>${totLect}</td>
+                    <td>-</td>
+                    <td>${totAmt.toLocaleString('en-US')}</td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+        <div style="margin-top:8px; font-size:12px; font-weight:bold;">المبلغ كتابةً: ${numberToArabicWords(totAmt)}</div>
+        <div style="display:flex; justify-content:space-between; margin-top:28px; font-size:12px; font-weight:bold; text-align:center;">
+            <div>توقيع الموظف المسؤول<br><br>${escapeHtml(document.getElementById('empResponsible').value)}</div>
+            <div>توقيع مسؤول الشعبة<br><br>${escapeHtml(document.getElementById('sectionHead').value)}</div>
+            <div>توقيع مدير الدورة<br><br>${escapeHtml(document.getElementById('courseDirector').value)}</div>
+            <div>توقيع مدير القسم<br><br>${escapeHtml(document.getElementById('deptDirector').value)}</div>
+        </div>
+        </div>
+    `;
+    window.print();
+}
+
+const LP_AUTH_SESSION_KEY = 'lp_auth_ok_v1';
+const LP_EXPECTED_USER = 'imanmostafa2026';
+const LP_EXPECTED_PASS = 'tadreeb@26#iman';
+let lpDataInitialized = false;
+
+function unlockLecturerPaymentsPage() {
+    const overlay = document.getElementById('lpAuthOverlay');
+    const main = document.getElementById('lpMainContainer');
+    if (overlay) overlay.style.display = 'none';
+    if (main) main.style.display = '';
+    if (!lpDataInitialized) {
+        lpDataInitialized = true;
+        loadSystemData();
+    }
+}
+
+function handleLpLogin(event) {
+    if (event) event.preventDefault();
+    const u = (document.getElementById('lpAuthUser').value || '').trim();
+    const p = document.getElementById('lpAuthPass').value || '';
+    const errEl = document.getElementById('lpAuthError');
+
+    if (u === LP_EXPECTED_USER && p === LP_EXPECTED_PASS) {
+        try { sessionStorage.setItem(LP_AUTH_SESSION_KEY, '1'); } catch (e) {}
+        if (errEl) errEl.style.display = 'none';
+        unlockLecturerPaymentsPage();
+    } else {
+        if (errEl) {
+            errEl.textContent = '❌ اسم المستخدم أو كلمة المرور غير صحيحة.';
+            errEl.style.display = 'block';
+        }
+        document.getElementById('lpAuthPass').value = '';
+        document.getElementById('lpAuthPass').focus();
+    }
+    return false;
+}
+
+function lockLecturerPaymentsPage() {
+    try { sessionStorage.removeItem(LP_AUTH_SESSION_KEY); } catch (e) {}
+    const overlay = document.getElementById('lpAuthOverlay');
+    const main = document.getElementById('lpMainContainer');
+    if (main) main.style.display = 'none';
+    if (overlay) overlay.style.display = 'flex';
+    const userEl = document.getElementById('lpAuthUser');
+    const passEl = document.getElementById('lpAuthPass');
+    if (userEl) userEl.value = '';
+    if (passEl) passEl.value = '';
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+    let isAuthed = false;
+    try { isAuthed = sessionStorage.getItem(LP_AUTH_SESSION_KEY) === '1'; } catch (e) {}
+    if (isAuthed) {
+        unlockLecturerPaymentsPage();
+    } else {
+        const userEl = document.getElementById('lpAuthUser');
+        if (userEl) userEl.focus();
+    }
+});
+window.addEventListener('storage', function(e) {
+    if (e.key === 'lecturerPaymentsPrefill' && lpDataInitialized) {
+        applyLecturerPaymentsPrefill();
+    }
+});
+</script>
+</body>
+</html>
